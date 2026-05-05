@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RentUp — Settings</title>
+  <meta name="description" content="Configure your RentUp app — electricity rates, theme, and data export.">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#7c6cf0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="bg-mesh"></div>
+  <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">🏠 RentUp</div>
+      <nav>
+        <a href="dashboard.html" class="nav-link" data-page="dashboard"><span class="icon">📊</span> Dashboard</a>
+        <a href="properties.html" class="nav-link" data-page="properties"><span class="icon">🏢</span> Properties</a>
+        <a href="rooms.html" class="nav-link" data-page="rooms"><span class="icon">🚪</span> Rooms</a>
+        <a href="billing.html" class="nav-link" data-page="billing"><span class="icon">💰</span> Billing</a>
+        <a href="settings.html" class="nav-link" data-page="settings"><span class="icon">⚙️</span> Settings</a>
+      </nav>
+      <div class="nav-bottom">
+        <div class="user-info">
+          <div class="user-avatar">U</div>
+          <div><div class="user-name">User</div><div class="user-email">user@email.com</div></div>
+        </div>
+        <button class="nav-link" onclick="Utils.logout()"><span class="icon">🚪</span> Sign Out</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-header">
+        <div>
+          <h1>Settings</h1>
+          <p class="subtitle">Configure your app preferences</p>
+        </div>
+      </div>
+
+      <div class="glass-static" style="padding:28px;max-width:640px">
+        <!-- Billing Settings -->
+        <div class="settings-section">
+          <h3>⚡ Billing</h3>
+          <div class="setting-row">
+            <div class="setting-label">
+              <div class="title">Electricity Rate (per unit)</div>
+              <div class="desc">Used to calculate electricity charges on new bills</div>
+            </div>
+            <input type="number" id="electricity-rate" class="form-control" style="width:120px;text-align:right" min="0" step="0.5">
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">
+              <div class="title">Currency</div>
+              <div class="desc">Display currency symbol</div>
+            </div>
+            <select id="currency" class="form-control" style="width:120px">
+              <option value="PKR">PKR</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+              <option value="INR">INR</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Appearance -->
+        <div class="settings-section">
+          <h3>🎨 Appearance</h3>
+          <div class="setting-row">
+            <div class="setting-label">
+              <div class="title">Dark Mode</div>
+              <div class="desc">Toggle between dark and light themes</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="theme-toggle">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Save -->
+        <button class="btn btn-primary" id="btn-save-settings" style="width:100%;justify-content:center">Save Settings</button>
+      </div>
+
+      <!-- Data Management -->
+      <div class="glass-static" style="padding:28px;max-width:640px;margin-top:20px">
+        <div class="settings-section" style="margin-bottom:0">
+          <h3>💾 Data</h3>
+          <div class="setting-row">
+            <div class="setting-label">
+              <div class="title">Export All Data</div>
+              <div class="desc">Download a full JSON backup of your data</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btn-export-backup">Download Backup</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/settings.js"></script>
+</body>
+</html>

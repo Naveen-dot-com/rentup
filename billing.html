@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RentUp — Billing</title>
+  <meta name="description" content="Create and manage monthly bills for your rental properties.">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#7c6cf0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="bg-mesh"></div>
+  <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">🏠 RentUp</div>
+      <nav>
+        <a href="dashboard.html" class="nav-link" data-page="dashboard"><span class="icon">📊</span> Dashboard</a>
+        <a href="properties.html" class="nav-link" data-page="properties"><span class="icon">🏢</span> Properties</a>
+        <a href="rooms.html" class="nav-link" data-page="rooms"><span class="icon">🚪</span> Rooms</a>
+        <a href="billing.html" class="nav-link" data-page="billing"><span class="icon">💰</span> Billing</a>
+        <a href="settings.html" class="nav-link" data-page="settings"><span class="icon">⚙️</span> Settings</a>
+      </nav>
+      <div class="nav-bottom">
+        <div class="user-info">
+          <div class="user-avatar">U</div>
+          <div><div class="user-name">User</div><div class="user-email">user@email.com</div></div>
+        </div>
+        <button class="nav-link" onclick="Utils.logout()"><span class="icon">🚪</span> Sign Out</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-header">
+        <div>
+          <h1>Billing</h1>
+          <p class="subtitle">Generate and manage monthly bills</p>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-secondary" id="btn-export-excel">📊 Export Excel</button>
+          <button class="btn btn-primary" id="btn-add-bill">+ New Bill</button>
+        </div>
+      </div>
+
+      <div class="filters-bar">
+        <input type="month" id="filter-month" class="form-control" title="Filter by month">
+        <select id="filter-property" class="form-control">
+          <option value="">All Properties</option>
+        </select>
+      </div>
+
+      <div class="glass-static" style="padding:24px">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Room</th>
+                <th>Month</th>
+                <th>Rent</th>
+                <th>Elec Units</th>
+                <th>Elec Amount</th>
+                <th>Gas</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="bills-body">
+              <tr><td colspan="10" class="empty-state" style="padding:40px"><div class="icon">💰</div><p>No bills found</p></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- New Bill Modal -->
+      <div class="modal-overlay" id="bill-modal">
+        <div class="modal glass-static">
+          <div class="modal-header">
+            <h2 id="bill-modal-title">New Bill</h2>
+            <button class="modal-close" onclick="$('#bill-modal').removeClass('active')">✕</button>
+          </div>
+          <form id="bill-form">
+            <input type="hidden" id="bill-id">
+            <div class="form-group">
+              <label for="bill-property">Property</label>
+              <select id="bill-property" class="form-control" required>
+                <option value="">Select property</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="bill-room">Room</label>
+              <select id="bill-room" class="form-control" required>
+                <option value="">Select room</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="bill-month">Month</label>
+              <input type="month" id="bill-month" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="bill-rent">Rent Amount (override)</label>
+              <input type="number" id="bill-rent" class="form-control" placeholder="Leave empty for default" min="0" step="100">
+            </div>
+            <div class="form-group">
+              <label for="bill-elec-units">Electricity Units</label>
+              <input type="number" id="bill-elec-units" class="form-control" placeholder="0" min="0" step="0.1">
+            </div>
+            <div class="form-group">
+              <label for="bill-gas-units">Gas Units</label>
+              <input type="number" id="bill-gas-units" class="form-control" placeholder="0" min="0" step="0.1">
+            </div>
+            <div class="form-group">
+              <label for="bill-gas-amount">Gas Amount</label>
+              <input type="number" id="bill-gas-amount" class="form-control" placeholder="0" min="0" step="1">
+            </div>
+            <div class="form-group">
+              <label for="bill-notes">Notes</label>
+              <textarea id="bill-notes" class="form-control" placeholder="Optional notes"></textarea>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" onclick="$('#bill-modal').removeClass('active')">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Bill</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/billing.js"></script>
+</body>
+</html>

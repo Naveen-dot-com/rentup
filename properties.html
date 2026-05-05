@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RentUp — Properties</title>
+  <meta name="description" content="Manage your rental properties — add, edit, and organize property listings.">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#7c6cf0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="bg-mesh"></div>
+  <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">🏠 RentUp</div>
+      <nav>
+        <a href="dashboard.html" class="nav-link" data-page="dashboard"><span class="icon">📊</span> Dashboard</a>
+        <a href="properties.html" class="nav-link" data-page="properties"><span class="icon">🏢</span> Properties</a>
+        <a href="rooms.html" class="nav-link" data-page="rooms"><span class="icon">🚪</span> Rooms</a>
+        <a href="billing.html" class="nav-link" data-page="billing"><span class="icon">💰</span> Billing</a>
+        <a href="settings.html" class="nav-link" data-page="settings"><span class="icon">⚙️</span> Settings</a>
+      </nav>
+      <div class="nav-bottom">
+        <div class="user-info">
+          <div class="user-avatar">U</div>
+          <div><div class="user-name">User</div><div class="user-email">user@email.com</div></div>
+        </div>
+        <button class="nav-link" onclick="Utils.logout()"><span class="icon">🚪</span> Sign Out</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-header">
+        <div>
+          <h1>Properties</h1>
+          <p class="subtitle">Manage your rental properties</p>
+        </div>
+        <button class="btn btn-primary" id="btn-add-property">+ Add Property</button>
+      </div>
+
+      <div class="cards-grid" id="properties-grid">
+        <div class="empty-state glass-static" style="grid-column:1/-1;padding:60px">
+          <div class="icon">🏢</div>
+          <h3>No properties yet</h3>
+          <p>Add your first property to get started</p>
+        </div>
+      </div>
+
+      <!-- Property Modal -->
+      <div class="modal-overlay" id="property-modal">
+        <div class="modal glass-static">
+          <div class="modal-header">
+            <h2 id="modal-title">Add Property</h2>
+            <button class="modal-close" onclick="$('#property-modal').removeClass('active')">✕</button>
+          </div>
+          <form id="property-form">
+            <input type="hidden" id="property-id">
+            <div class="form-group">
+              <label for="property-name">Property Name</label>
+              <input type="text" id="property-name" class="form-control" placeholder="e.g. Sunset Apartments" required>
+            </div>
+            <div class="form-group">
+              <label for="property-address">Address</label>
+              <input type="text" id="property-address" class="form-control" placeholder="e.g. 123 Main Street">
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" onclick="$('#property-modal').removeClass('active')">Cancel</button>
+              <button type="submit" class="btn btn-primary" id="property-submit">Save Property</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/properties.js"></script>
+</body>
+</html>
