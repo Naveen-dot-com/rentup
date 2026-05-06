@@ -1,5 +1,5 @@
 // ============================================================
-// RentUp v5 — Shared Utilities Perplexity
+// RentUp v6P — Shared Utilities
 // ============================================================
 const CURRENCY_SYMBOLS = { INR: '₹', PKR: '₨', USD: '$', EUR: '€', GBP: '£' };
 const Utils = (() => {
@@ -30,43 +30,71 @@ const Utils = (() => {
   function getStatusLabel(isPaid) { return isPaid === 1 ? t('status_paid') : isPaid === 2 ? t('status_partial') : t('status_unpaid'); }
   function getStatusClass(isPaid) { return isPaid === 1 ? 'badge-success' : isPaid === 2 ? 'badge-warning' : 'badge-danger'; }
 
-  // Generate PDF from HTML string using html2pdf
-  // Fixed: consistent A4 output on all devices (no mobile reflow, no blank pages)
+  // ============================================================
+  // generateHTMLPDF — Fixed v2
+  //
+  // Root causes of blank PDF:
+  // 1. position:fixed at top:-99999px → html2canvas captures 0-height on mobile
+  //    because getBoundingClientRect() returns a rect outside the viewport clip.
+  // 2. Passing raw HTML string to .from() gives html2pdf no control over
+  //    element sizing, so responsive CSS collapses tables.
+  //
+  // Fix: use a VISIBLE wrapper (opacity:0, pointer-events:none, overflow:hidden)
+  // placed at the TOP of the document in normal flow. html2canvas can measure
+  // its real height, then we clean up after saving.
+  // ============================================================
   async function generateHTMLPDF(htmlStr, filename, isLandscape = false) {
-    // 1. Render into a fixed-width off-screen container so mobile CSS never applies
     const pxWidth = isLandscape ? 1123 : 794;
-    const container = document.createElement('div');
-    container.style.cssText =
-      'position:fixed;top:-99999px;left:-99999px;z-index:-1;' +
-      'width:' + pxWidth + 'px;background:#fff;font-family:sans-serif;box-sizing:border-box;';
-    container.innerHTML = htmlStr;
-    document.body.appendChild(container);
 
-    // 2. Wait for layout/fonts to settle
+    // Outer shell: in normal flow so html2canvas can measure real height,
+    // but visually hidden so the user never sees it flash on screen.
+    const shell = document.createElement('div');
+    shell.style.cssText =
+      'position:absolute;' +
+      'top:0;left:0;' +
+      'width:' + pxWidth + 'px;' +
+      'opacity:0;' +
+      'pointer-events:none;' +
+      'z-index:-9999;' +
+      'background:#fff;' +
+      'box-sizing:border-box;';
+    shell.innerHTML = htmlStr;
+    document.body.appendChild(shell);
+
+    // Wait two frames: first for DOM insert, second for layout/fonts to settle
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
+    // Grab the actual inner content element (the #pdf-export-wrap div)
+    // so html2canvas captures exactly that, not the full shell.
+    const inner = shell.querySelector('#pdf-export-wrap') || shell;
+
     const opt = {
-      margin: [8, 8, 8, 8],
+      margin:   [8, 8, 8, 8],          // mm: top, left, bottom, right
       filename: filename,
-      image: { type: 'jpeg', quality: 0.98 },
+      image:    { type: 'jpeg', quality: 0.98 },
       html2canvas: {
-        scale: 2,
-        useCORS: true,
+        scale:           2,             // retina-quality output
+        useCORS:         true,
         letterRendering: true,
-        width: pxWidth,
-        windowWidth: pxWidth,
-        scrollX: 0,
-        scrollY: 0,
+        width:           pxWidth,       // capture exactly this many CSS px wide
+        windowWidth:     pxWidth,       // prevents ALL mobile breakpoints firing
+        scrollX:         0,
+        scrollY:         -window.scrollY, // compensate for any page scroll
         backgroundColor: '#ffffff',
+        logging:         false,
       },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: isLandscape ? 'landscape' : 'portrait' },
+      jsPDF: {
+        unit:        'mm',
+        format:      'a4',
+        orientation: isLandscape ? 'landscape' : 'portrait',
+      },
       pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
     };
 
     try {
-      await html2pdf().set(opt).from(container).save();
+      await html2pdf().set(opt).from(inner).save();
     } finally {
-      document.body.removeChild(container);
+      document.body.removeChild(shell);
     }
   }
 
