@@ -1,132 +1,146 @@
 // ============================================================
-// RentUp — Rooms Page Logic
+// RentUp v2 — Rooms Logic
 // ============================================================
 
 $(function () {
-  Utils.initTheme();
   if (!Utils.requireAuth()) return;
+  Utils.initTheme();
   Utils.initSidebar('rooms');
+  Utils.initTopBar();
+  lucide.createIcons();
+  $('[data-i18n]').each(function () { $(this).text(t($(this).data('i18n'))); });
+  $('#room-name').attr('placeholder', t('room_name_ph'));
+  $('#room-tenant').attr('placeholder', t('room_tenant_ph'));
+  $('#room-rent').attr('placeholder', t('room_rent_ph'));
 
-  let propertiesList = [];
+  // Load settings for currency
+  (async () => {
+    try {
+      const res = await API.getSettings();
+      Utils.setCurrency(res.data.currency || 'INR');
+    } catch {}
+  })();
+
+  let allProperties = [];
 
   async function loadProperties() {
+    const cached = Utils.cacheGet('properties');
+    if (cached) populatePropertyFilters(cached);
     try {
       const res = await API.getProperties();
-      propertiesList = res.data || [];
-      const $filter = $('#filter-property');
-      const $modal = $('#room-property');
-      $filter.find('option:not(:first)').remove();
-      $modal.find('option:not(:first)').remove();
-      propertiesList.forEach(p => {
-        $filter.append(`<option value="${p.id}">${p.name}</option>`);
-        $modal.append(`<option value="${p.id}">${p.name}</option>`);
-      });
-    } catch (err) {
-      Utils.showToast(err.message, 'error');
-    }
+      allProperties = res.data;
+      populatePropertyFilters(res.data);
+      Utils.cacheSet('properties', res.data);
+    } catch {}
+  }
+
+  function populatePropertyFilters(props) {
+    allProperties = props;
+    const filter = $('#filter-property');
+    const modal = $('#room-property');
+    filter.find('option:not(:first)').remove();
+    modal.find('option:not(:first)').remove();
+    props.forEach(p => {
+      filter.append(`<option value="${p.id}">${p.name}</option>`);
+      modal.append(`<option value="${p.id}">${p.name}</option>`);
+    });
   }
 
   async function loadRooms() {
+    const propId = $('#filter-property').val();
+    const cacheKey = 'rooms_' + propId;
+    const cached = Utils.cacheGet(cacheKey);
+    if (cached) render(cached);
     try {
-      const propertyId = $('#filter-property').val() || undefined;
-      const res = await API.getRooms(propertyId);
-      const grid = $('#rooms-grid');
-      grid.empty();
-
-      if (!res.data || res.data.length === 0) {
-        grid.html(`<div class="empty-state glass-static" style="grid-column:1/-1;padding:60px">
-          <div class="icon">🚪</div><h3>No rooms found</h3><p>Add rooms to your properties</p>
-        </div>`);
-        return;
-      }
-
-      res.data.forEach(r => {
-        grid.append(`
-          <div class="item-card glass slide-up">
-            <div class="card-header">
-              <div>
-                <div class="card-title">${r.name}</div>
-                <div class="card-subtitle">${r.property_name}</div>
-              </div>
-              <div class="card-actions">
-                <button class="btn btn-secondary btn-icon btn-sm" onclick="editRoom(${r.id}, ${r.property_id}, '${r.name.replace(/'/g, "\\'")}', ${r.default_rent})">✏️</button>
-                <button class="btn btn-danger btn-icon btn-sm" onclick="deleteRoom(${r.id}, '${r.name.replace(/'/g, "\\'")}')">🗑️</button>
-              </div>
-            </div>
-            <div class="card-body">
-              <span style="font-size:1.1rem;font-weight:700;color:var(--accent-light)">${Utils.formatCurrency(r.default_rent)}</span>
-              <span style="color:var(--text-muted);font-size:0.8rem"> / month</span>
-            </div>
-          </div>
-        `);
-      });
-    } catch (err) {
-      Utils.showToast(err.message, 'error');
+      const res = await API.getRooms(propId);
+      render(res.data);
+      Utils.cacheSet(cacheKey, res.data);
+    } catch (e) {
+      if (!cached) Utils.showToast(e.message, 'error');
     }
   }
 
-  // Filter change
-  $('#filter-property').on('change', loadRooms);
-
-  // Add room
-  $('#btn-add-room').on('click', function () {
-    if (propertiesList.length === 0) {
-      Utils.showToast('Create a property first', 'error');
+  function render(rooms) {
+    const grid = $('#rooms-grid');
+    if (!rooms.length) {
+      grid.html(`<div class="empty-state"><div class="e-icon"><i data-lucide="door-open"></i></div><h3>${t('room_no_rooms')}</h3><p>${t('room_no_rooms_desc')}</p></div>`);
+      lucide.createIcons();
       return;
     }
-    $('#room-modal-title').text('Add Room');
+    grid.html(rooms.map(r => `
+      <div class="item-card glass slide-up">
+        <div class="card-header">
+          <div>
+            <div class="card-title">${r.name}</div>
+            <div class="card-subtitle">${r.property_name}</div>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-icon btn-secondary btn-sm" onclick="editRoom(${JSON.stringify(r).replace(/"/g, '&quot;')})" title="${t('edit')}"><i data-lucide="pencil"></i></button>
+            <button class="btn btn-icon btn-danger btn-sm" onclick="deleteRoom(${r.id}, '${r.name.replace(/'/g, "\\'")}')" title="${t('delete')}"><i data-lucide="trash-2"></i></button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="badge badge-accent">${Utils.formatCurrency(r.default_rent)} ${t('room_per_month')}</span>
+            <span class="badge ${r.tenant_name ? 'badge-success' : 'badge-warning'}"><i data-lucide="user" style="width:12px;height:12px;margin-right:4px"></i> ${r.tenant_name || t('room_no_tenant')}</span>
+          </div>
+        </div>
+      </div>
+    `).join(''));
+    lucide.createIcons();
+  }
+
+  $('#filter-property').on('change', loadRooms);
+
+  $('#btn-add-room').on('click', function () {
+    if (!allProperties.length) { Utils.showToast(t('room_create_property_first'), 'error'); return; }
     $('#room-id').val('');
-    $('#room-property').val('').prop('disabled', false);
-    $('#room-name').val('');
-    $('#room-rent').val('');
+    $('#room-modal-title').text(t('room_add_title'));
+    $('#room-form')[0].reset();
     $('#room-modal').addClass('active');
   });
 
-  // Edit room
-  window.editRoom = function (id, propertyId, name, rent) {
-    $('#room-modal-title').text('Edit Room');
-    $('#room-id').val(id);
-    $('#room-property').val(propertyId).prop('disabled', true);
-    $('#room-name').val(name);
-    $('#room-rent').val(rent);
+  window.editRoom = function (r) {
+    $('#room-id').val(r.id);
+    $('#room-modal-title').text(t('room_edit'));
+    $('#room-name').val(r.name);
+    $('#room-tenant').val(r.tenant_name || '');
+    $('#room-rent').val(r.default_rent);
+    $('#room-property').val(r.property_id);
     $('#room-modal').addClass('active');
   };
 
-  // Delete room
   window.deleteRoom = async function (id, name) {
-    if (!Utils.confirm('Delete room "' + name + '"? All bills for this room will be deleted.')) return;
+    if (!Utils.confirm(t('room_delete_confirm', { name }))) return;
     try {
       await API.deleteRoom(id);
-      Utils.showToast('Room deleted', 'success');
+      Utils.showToast(t('room_deleted'), 'success');
+      Utils.cacheClear('rooms');
       loadRooms();
-    } catch (err) {
-      Utils.showToast(err.message, 'error');
-    }
+    } catch (e) { Utils.showToast(e.message, 'error'); }
   };
 
-  // Form submit
   $('#room-form').on('submit', async function (e) {
     e.preventDefault();
-    const id = $('#room-id').val();
     const data = {
       property_id: parseInt($('#room-property').val()),
       name: $('#room-name').val().trim(),
+      tenant_name: $('#room-tenant').val().trim(),
       default_rent: parseFloat($('#room-rent').val()) || 0,
     };
-
+    const id = $('#room-id').val();
     try {
       if (id) {
         await API.updateRoom(id, data);
-        Utils.showToast('Room updated', 'success');
+        Utils.showToast(t('room_updated'), 'success');
       } else {
         await API.createRoom(data);
-        Utils.showToast('Room created', 'success');
+        Utils.showToast(t('room_created'), 'success');
       }
       $('#room-modal').removeClass('active');
+      Utils.cacheClear('rooms');
       loadRooms();
-    } catch (err) {
-      Utils.showToast(err.message, 'error');
-    }
+    } catch (e) { Utils.showToast(e.message, 'error'); }
   });
 
   loadProperties().then(loadRooms);

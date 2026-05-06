@@ -1,103 +1,183 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>RentUp — Dashboard</title>
-  <meta name="description" content="RentUp Dashboard — View property stats, revenue, and recent billing activity.">
+  <meta name="description" content="Dashboard — View your rental property statistics and manage monthly billing.">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#7c6cf0">
+  <meta name="theme-color" content="#6c5ce7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('rentup_theme')||'light');</script>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <div class="bg-mesh"></div>
-  <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+  <button class="sidebar-toggle" id="sidebar-toggle"><i data-lucide="menu"></i></button>
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
   <div class="app-layout">
-    <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
-      <div class="brand">🏠 RentUp</div>
+      <div class="brand"><i data-lucide="home"></i> <span>RentUp</span></div>
       <nav>
-        <a href="dashboard.html" class="nav-link" data-page="dashboard"><span class="icon">📊</span> Dashboard</a>
-        <a href="properties.html" class="nav-link" data-page="properties"><span class="icon">🏢</span> Properties</a>
-        <a href="rooms.html" class="nav-link" data-page="rooms"><span class="icon">🚪</span> Rooms</a>
-        <a href="billing.html" class="nav-link" data-page="billing"><span class="icon">💰</span> Billing</a>
-        <a href="settings.html" class="nav-link" data-page="settings"><span class="icon">⚙️</span> Settings</a>
+        <a href="dashboard.html" class="nav-link" data-page="dashboard"><i data-lucide="layout-dashboard"></i> <span data-i18n="nav_dashboard">Dashboard</span></a>
+        <a href="properties.html" class="nav-link" data-page="properties"><i data-lucide="building-2"></i> <span data-i18n="nav_properties">Properties</span></a>
+        <a href="rooms.html" class="nav-link" data-page="rooms"><i data-lucide="door-open"></i> <span data-i18n="nav_rooms">Rooms</span></a>
+        <a href="settings.html" class="nav-link" data-page="settings"><i data-lucide="settings"></i> <span data-i18n="nav_settings">Settings</span></a>
       </nav>
       <div class="nav-bottom">
         <div class="user-info">
           <div class="user-avatar">U</div>
-          <div>
-            <div class="user-name">User</div>
-            <div class="user-email">user@email.com</div>
-          </div>
+          <div><div class="user-name">User</div><div class="user-email">user@email.com</div></div>
         </div>
-        <button class="nav-link" onclick="Utils.logout()"><span class="icon">🚪</span> Sign Out</button>
+        <button class="nav-link" onclick="Utils.logout()"><i data-lucide="log-out"></i> <span data-i18n="nav_signout">Sign Out</span></button>
       </div>
     </aside>
 
-    <!-- Main Content -->
     <main class="main-content">
+      <div class="top-bar">
+        <button class="top-bar-btn" id="btn-toggle-theme" title="Toggle theme"><i data-lucide="moon"></i></button>
+        <button class="top-bar-btn" id="btn-toggle-lang" title="Language">हि</button>
+      </div>
+
       <div class="page-header">
         <div>
-          <h1>Dashboard</h1>
-          <p class="subtitle">Welcome back! Here's your overview.</p>
-        </div>
-        <div class="filters-bar">
-          <input type="month" id="dashboard-month" class="form-control" title="Select month">
+          <h1 data-i18n="dash_title">Dashboard</h1>
+          <p class="subtitle" data-i18n="dash_subtitle">Welcome back! Here's your overview.</p>
         </div>
       </div>
 
-      <!-- Stats -->
       <div class="stats-grid" id="stats-grid">
         <div class="stat-card glass slide-up">
-          <div class="stat-icon purple">🏢</div>
-          <div class="stat-value" id="stat-properties">0</div>
-          <div class="stat-label">Properties</div>
+          <div class="stat-icon purple"><i data-lucide="building-2"></i></div>
+          <div class="stat-value" id="stat-properties">--</div>
+          <div class="stat-label" data-i18n="dash_properties">Properties</div>
         </div>
         <div class="stat-card glass slide-up">
-          <div class="stat-icon green">🚪</div>
-          <div class="stat-value" id="stat-rooms">0</div>
-          <div class="stat-label">Rooms</div>
+          <div class="stat-icon green"><i data-lucide="door-open"></i></div>
+          <div class="stat-value" id="stat-rooms">--</div>
+          <div class="stat-label" data-i18n="dash_rooms">Rooms</div>
         </div>
         <div class="stat-card glass slide-up">
-          <div class="stat-icon yellow">💰</div>
-          <div class="stat-value" id="stat-revenue">PKR 0</div>
-          <div class="stat-label">Monthly Revenue</div>
+          <div class="stat-icon yellow"><i data-lucide="indian-rupee"></i></div>
+          <div class="stat-value" id="stat-revenue">--</div>
+          <div class="stat-label" data-i18n="dash_monthly_revenue">Monthly Revenue</div>
         </div>
         <div class="stat-card glass slide-up">
-          <div class="stat-icon red">📋</div>
-          <div class="stat-value" id="stat-unpaid">0</div>
-          <div class="stat-label">Unpaid Bills</div>
+          <div class="stat-icon red"><i data-lucide="alert-circle"></i></div>
+          <div class="stat-value" id="stat-unpaid">--</div>
+          <div class="stat-label" data-i18n="dash_unpaid_bills">Unpaid Bills</div>
         </div>
       </div>
 
-      <!-- Recent Bills -->
-      <div class="glass-static" style="padding: 24px; margin-top: 8px;">
-        <h2 style="font-family:var(--font-heading);font-size:1.15rem;margin-bottom:16px;">Recent Bills</h2>
+      <!-- Billing Section -->
+      <div class="section-divider">
+        <div class="page-header" style="margin-bottom:0">
+          <div>
+            <h2><i data-lucide="receipt"></i> <span data-i18n="dash_billing">Billing</span></h2>
+            <p class="subtitle" data-i18n="dash_billing_subtitle">Generate and manage monthly bills</p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-secondary btn-sm" id="btn-export-excel"><i data-lucide="file-spreadsheet"></i> <span data-i18n="bill_export_excel">Export Excel</span></button>
+            <button class="btn btn-primary btn-sm" id="btn-add-bill"><i data-lucide="plus"></i> <span data-i18n="bill_new">+ New Bill</span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="filters-bar">
+        <input type="month" id="filter-month" class="form-control" title="Month">
+        <select id="filter-property" class="form-control">
+          <option value="" data-i18n="room_all_properties">All Properties</option>
+        </select>
+      </div>
+
+      <div class="glass-static" style="padding:20px">
         <div class="table-container">
           <table>
             <thead>
               <tr>
-                <th>Property</th>
-                <th>Room</th>
-                <th>Month</th>
-                <th>Total</th>
-                <th>Status</th>
+                <th data-i18n="th_property">Property</th>
+                <th data-i18n="th_room">Room</th>
+                <th data-i18n="th_tenant">Tenant</th>
+                <th data-i18n="th_month">Month</th>
+                <th data-i18n="th_rent">Rent</th>
+                <th data-i18n="th_elec_units">Elec Units</th>
+                <th data-i18n="th_elec_amount">Elec Amount</th>
+                <th data-i18n="th_gas">Gas</th>
+                <th data-i18n="th_total">Total</th>
+                <th data-i18n="th_status">Status</th>
+                <th data-i18n="th_actions">Actions</th>
               </tr>
             </thead>
-            <tbody id="recent-bills-body">
-              <tr><td colspan="5" class="empty-state" style="padding:40px"><p>No bills yet</p></td></tr>
+            <tbody id="bills-body">
+              <tr><td colspan="11" class="empty-state" style="padding:36px"><div class="e-icon"><i data-lucide="receipt"></i></div><p data-i18n="dash_no_bills">No bills found</p></td></tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- New/Edit Bill Modal -->
+      <div class="modal-overlay" id="bill-modal">
+        <div class="modal glass-static">
+          <div class="modal-header">
+            <h2 id="bill-modal-title" data-i18n="bill_new_title">New Bill</h2>
+            <button class="modal-close" onclick="$('#bill-modal').removeClass('active')">✕</button>
+          </div>
+          <form id="bill-form">
+            <input type="hidden" id="bill-id">
+            <div class="form-group">
+              <label for="bill-property" data-i18n="th_property">Property</label>
+              <select id="bill-property" class="form-control" required>
+                <option value="" data-i18n="bill_select_property">Select property</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="bill-room" data-i18n="th_room">Room</label>
+              <select id="bill-room" class="form-control" required>
+                <option value="" data-i18n="bill_select_room_opt">Select room</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="bill-month" data-i18n="bill_month">Month</label>
+              <input type="month" id="bill-month" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="bill-rent" data-i18n="bill_rent_override">Rent Amount (override)</label>
+              <input type="number" id="bill-rent" class="form-control" min="0" step="100">
+            </div>
+            <div class="form-group">
+              <label for="bill-elec-units" data-i18n="bill_elec_units">Electricity Units</label>
+              <input type="number" id="bill-elec-units" class="form-control" placeholder="0" min="0" step="0.1">
+            </div>
+            <div class="form-group">
+              <label for="bill-gas-units" data-i18n="bill_gas_units">Gas Units</label>
+              <input type="number" id="bill-gas-units" class="form-control" placeholder="0" min="0" step="0.1">
+            </div>
+            <div class="form-group">
+              <label for="bill-gas-amount" data-i18n="bill_gas_amount">Gas Amount</label>
+              <input type="number" id="bill-gas-amount" class="form-control" placeholder="0" min="0" step="1">
+            </div>
+            <div class="form-group">
+              <label for="bill-notes" data-i18n="bill_notes">Notes</label>
+              <textarea id="bill-notes" class="form-control"></textarea>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" onclick="$('#bill-modal').removeClass('active')" data-i18n="cancel">Cancel</button>
+              <button type="submit" class="btn btn-primary" data-i18n="bill_save">Save Bill</button>
+            </div>
+          </form>
         </div>
       </div>
     </main>
   </div>
 
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="js/i18n.js"></script>
   <script src="js/api.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/dashboard.js"></script>

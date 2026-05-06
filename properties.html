@@ -1,76 +1,82 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>RentUp — Properties</title>
-  <meta name="description" content="Manage your rental properties — add, edit, and organize property listings.">
+  <meta name="description" content="Manage your rental properties.">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#7c6cf0">
+  <meta name="theme-color" content="#6c5ce7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('rentup_theme')||'light');</script>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <div class="bg-mesh"></div>
-  <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+  <button class="sidebar-toggle" id="sidebar-toggle"><i data-lucide="menu"></i></button>
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
   <div class="app-layout">
     <aside class="sidebar" id="sidebar">
-      <div class="brand">🏠 RentUp</div>
+      <div class="brand"><i data-lucide="home"></i> <span>RentUp</span></div>
       <nav>
-        <a href="dashboard.html" class="nav-link" data-page="dashboard"><span class="icon">📊</span> Dashboard</a>
-        <a href="properties.html" class="nav-link" data-page="properties"><span class="icon">🏢</span> Properties</a>
-        <a href="rooms.html" class="nav-link" data-page="rooms"><span class="icon">🚪</span> Rooms</a>
-        <a href="billing.html" class="nav-link" data-page="billing"><span class="icon">💰</span> Billing</a>
-        <a href="settings.html" class="nav-link" data-page="settings"><span class="icon">⚙️</span> Settings</a>
+        <a href="dashboard.html" class="nav-link" data-page="dashboard"><i data-lucide="layout-dashboard"></i> <span data-i18n="nav_dashboard">Dashboard</span></a>
+        <a href="properties.html" class="nav-link" data-page="properties"><i data-lucide="building-2"></i> <span data-i18n="nav_properties">Properties</span></a>
+        <a href="rooms.html" class="nav-link" data-page="rooms"><i data-lucide="door-open"></i> <span data-i18n="nav_rooms">Rooms</span></a>
+        <a href="settings.html" class="nav-link" data-page="settings"><i data-lucide="settings"></i> <span data-i18n="nav_settings">Settings</span></a>
       </nav>
       <div class="nav-bottom">
         <div class="user-info">
           <div class="user-avatar">U</div>
           <div><div class="user-name">User</div><div class="user-email">user@email.com</div></div>
         </div>
-        <button class="nav-link" onclick="Utils.logout()"><span class="icon">🚪</span> Sign Out</button>
+        <button class="nav-link" onclick="Utils.logout()"><i data-lucide="log-out"></i> <span data-i18n="nav_signout">Sign Out</span></button>
       </div>
     </aside>
 
     <main class="main-content">
+      <div class="top-bar">
+        <button class="top-bar-btn" id="btn-toggle-theme" title="Toggle theme"><i data-lucide="moon"></i></button>
+        <button class="top-bar-btn" id="btn-toggle-lang" title="Language">हि</button>
+      </div>
+
       <div class="page-header">
         <div>
-          <h1>Properties</h1>
-          <p class="subtitle">Manage your rental properties</p>
+          <h1 data-i18n="prop_title">Properties</h1>
+          <p class="subtitle" data-i18n="prop_subtitle">Manage your rental properties</p>
         </div>
-        <button class="btn btn-primary" id="btn-add-property">+ Add Property</button>
+        <button class="btn btn-primary" id="btn-add-property"><i data-lucide="plus"></i> <span data-i18n="prop_add">+ Add Property</span></button>
       </div>
 
       <div class="cards-grid" id="properties-grid">
-        <div class="empty-state glass-static" style="grid-column:1/-1;padding:60px">
-          <div class="icon">🏢</div>
-          <h3>No properties yet</h3>
-          <p>Add your first property to get started</p>
-        </div>
+        <div class="empty-state"><div class="e-icon"><i data-lucide="building-2"></i></div><h3 data-i18n="prop_no_properties">No properties yet</h3><p data-i18n="prop_no_properties_desc">Add your first property to get started</p></div>
       </div>
 
-      <!-- Property Modal -->
+      <!-- Modal -->
       <div class="modal-overlay" id="property-modal">
         <div class="modal glass-static">
           <div class="modal-header">
-            <h2 id="modal-title">Add Property</h2>
+            <h2 id="property-modal-title" data-i18n="prop_add_title">Add Property</h2>
             <button class="modal-close" onclick="$('#property-modal').removeClass('active')">✕</button>
           </div>
           <form id="property-form">
             <input type="hidden" id="property-id">
             <div class="form-group">
-              <label for="property-name">Property Name</label>
-              <input type="text" id="property-name" class="form-control" placeholder="e.g. Sunset Apartments" required>
+              <label for="property-name" data-i18n="prop_name">Property Name</label>
+              <input type="text" id="property-name" class="form-control" required>
             </div>
             <div class="form-group">
-              <label for="property-address">Address</label>
-              <input type="text" id="property-address" class="form-control" placeholder="e.g. 123 Main Street">
+              <label for="property-address" data-i18n="prop_address">Address</label>
+              <input type="text" id="property-address" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="property-elec-rate" data-i18n="prop_elec_rate">Electricity Rate (per unit)</label>
+              <input type="number" id="property-elec-rate" class="form-control" value="35" min="0" step="0.5">
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" onclick="$('#property-modal').removeClass('active')">Cancel</button>
-              <button type="submit" class="btn btn-primary" id="property-submit">Save Property</button>
+              <button type="button" class="btn btn-secondary" onclick="$('#property-modal').removeClass('active')" data-i18n="cancel">Cancel</button>
+              <button type="submit" class="btn btn-primary" data-i18n="save">Save</button>
             </div>
           </form>
         </div>
@@ -79,6 +85,8 @@
   </div>
 
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="js/i18n.js"></script>
   <script src="js/api.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/properties.js"></script>

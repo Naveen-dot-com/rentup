@@ -1,102 +1,84 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>RentUp — Settings</title>
-  <meta name="description" content="Configure your RentUp app — electricity rates, theme, and data export.">
+  <meta name="description" content="Configure your RentUp app preferences.">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#7c6cf0">
+  <meta name="theme-color" content="#6c5ce7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('rentup_theme')||'light');</script>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <div class="bg-mesh"></div>
-  <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+  <button class="sidebar-toggle" id="sidebar-toggle"><i data-lucide="menu"></i></button>
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
   <div class="app-layout">
     <aside class="sidebar" id="sidebar">
-      <div class="brand">🏠 RentUp</div>
+      <div class="brand"><i data-lucide="home"></i> <span>RentUp</span></div>
       <nav>
-        <a href="dashboard.html" class="nav-link" data-page="dashboard"><span class="icon">📊</span> Dashboard</a>
-        <a href="properties.html" class="nav-link" data-page="properties"><span class="icon">🏢</span> Properties</a>
-        <a href="rooms.html" class="nav-link" data-page="rooms"><span class="icon">🚪</span> Rooms</a>
-        <a href="billing.html" class="nav-link" data-page="billing"><span class="icon">💰</span> Billing</a>
-        <a href="settings.html" class="nav-link" data-page="settings"><span class="icon">⚙️</span> Settings</a>
+        <a href="dashboard.html" class="nav-link" data-page="dashboard"><i data-lucide="layout-dashboard"></i> <span data-i18n="nav_dashboard">Dashboard</span></a>
+        <a href="properties.html" class="nav-link" data-page="properties"><i data-lucide="building-2"></i> <span data-i18n="nav_properties">Properties</span></a>
+        <a href="rooms.html" class="nav-link" data-page="rooms"><i data-lucide="door-open"></i> <span data-i18n="nav_rooms">Rooms</span></a>
+        <a href="settings.html" class="nav-link" data-page="settings"><i data-lucide="settings"></i> <span data-i18n="nav_settings">Settings</span></a>
       </nav>
       <div class="nav-bottom">
         <div class="user-info">
           <div class="user-avatar">U</div>
           <div><div class="user-name">User</div><div class="user-email">user@email.com</div></div>
         </div>
-        <button class="nav-link" onclick="Utils.logout()"><span class="icon">🚪</span> Sign Out</button>
+        <button class="nav-link" onclick="Utils.logout()"><i data-lucide="log-out"></i> <span data-i18n="nav_signout">Sign Out</span></button>
       </div>
     </aside>
 
     <main class="main-content">
+      <div class="top-bar">
+        <button class="top-bar-btn" id="btn-toggle-theme" title="Toggle theme"><i data-lucide="moon"></i></button>
+        <button class="top-bar-btn" id="btn-toggle-lang" title="Language">हि</button>
+      </div>
+
       <div class="page-header">
         <div>
-          <h1>Settings</h1>
-          <p class="subtitle">Configure your app preferences</p>
+          <h1 data-i18n="settings_title">Settings</h1>
+          <p class="subtitle" data-i18n="settings_subtitle">Configure your app preferences</p>
         </div>
       </div>
 
-      <div class="glass-static" style="padding:28px;max-width:640px">
-        <!-- Billing Settings -->
+      <div class="glass-static" style="padding:28px;max-width:600px">
+        <!-- Billing Section -->
         <div class="settings-section">
-          <h3>⚡ Billing</h3>
+          <h3><i data-lucide="receipt"></i> <span data-i18n="settings_billing">Billing</span></h3>
           <div class="setting-row">
             <div class="setting-label">
-              <div class="title">Electricity Rate (per unit)</div>
-              <div class="desc">Used to calculate electricity charges on new bills</div>
+              <div class="title" data-i18n="settings_currency">Currency</div>
+              <div class="desc" data-i18n="settings_currency_desc">Display currency symbol</div>
             </div>
-            <input type="number" id="electricity-rate" class="form-control" style="width:120px;text-align:right" min="0" step="0.5">
-          </div>
-          <div class="setting-row">
-            <div class="setting-label">
-              <div class="title">Currency</div>
-              <div class="desc">Display currency symbol</div>
-            </div>
-            <select id="currency" class="form-control" style="width:120px">
-              <option value="PKR">PKR</option>
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-              <option value="GBP">GBP</option>
-              <option value="INR">INR</option>
+            <select id="setting-currency" class="form-control" style="width:120px;min-height:38px">
+              <option value="INR">INR (₹)</option>
+              <option value="PKR">PKR (₨)</option>
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
             </select>
           </div>
-        </div>
-
-        <!-- Appearance -->
-        <div class="settings-section">
-          <h3>🎨 Appearance</h3>
-          <div class="setting-row">
-            <div class="setting-label">
-              <div class="title">Dark Mode</div>
-              <div class="desc">Toggle between dark and light themes</div>
-            </div>
-            <label class="toggle">
-              <input type="checkbox" id="theme-toggle">
-              <span class="slider"></span>
-            </label>
+          <div style="margin-top:16px">
+            <button class="btn btn-primary" id="btn-save-settings"><i data-lucide="save"></i> <span data-i18n="settings_save">Save Settings</span></button>
           </div>
         </div>
 
-        <!-- Save -->
-        <button class="btn btn-primary" id="btn-save-settings" style="width:100%;justify-content:center">Save Settings</button>
-      </div>
-
-      <!-- Data Management -->
-      <div class="glass-static" style="padding:28px;max-width:640px;margin-top:20px">
-        <div class="settings-section" style="margin-bottom:0">
-          <h3>💾 Data</h3>
+        <!-- Data Section -->
+        <div class="settings-section">
+          <h3><i data-lucide="database"></i> <span data-i18n="settings_data">Data</span></h3>
           <div class="setting-row">
             <div class="setting-label">
-              <div class="title">Export All Data</div>
-              <div class="desc">Download a full JSON backup of your data</div>
+              <div class="title" data-i18n="settings_export">Export All Data</div>
+              <div class="desc" data-i18n="settings_export_desc">Download a full JSON backup of your data</div>
             </div>
-            <button class="btn btn-secondary btn-sm" id="btn-export-backup">Download Backup</button>
+            <button class="btn btn-secondary btn-sm" id="btn-export"><i data-lucide="download"></i> <span data-i18n="settings_download_backup">Download Backup</span></button>
           </div>
         </div>
       </div>
@@ -104,6 +86,8 @@
   </div>
 
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="js/i18n.js"></script>
   <script src="js/api.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/settings.js"></script>

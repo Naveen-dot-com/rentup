@@ -1,17 +1,13 @@
 // ============================================================
-// RentUp — Auth Page Logic (index.html)
+// RentUp v2 — Auth Page Logic
 // ============================================================
 
 $(function () {
   Utils.initTheme();
+  $('[data-i18n]').each(function () { $(this).text(t($(this).data('i18n'))); });
 
-  // If already logged in, redirect to dashboard
-  if (API.getToken()) {
-    window.location.href = 'dashboard.html';
-    return;
-  }
+  if (API.getToken()) { window.location.href = 'dashboard.html'; return; }
 
-  // Tab switching
   $('.auth-tab').on('click', function () {
     const tab = $(this).data('tab');
     $('.auth-tab').removeClass('active');
@@ -20,50 +16,38 @@ $(function () {
     $('#' + tab + '-form').fadeIn(200);
   });
 
-  // Login
   $('#login-form').on('submit', async function (e) {
     e.preventDefault();
     const btn = $(this).find('button[type="submit"]');
-    btn.prop('disabled', true).text('Signing in...');
+    btn.prop('disabled', true).text(t('auth_signing_in'));
     try {
-      const res = await API.login({
-        email: $('#login-email').val().trim(),
-        password: $('#login-password').val(),
-      });
+      const res = await API.login({ email: $('#login-email').val().trim(), password: $('#login-password').val() });
       API.setToken(res.token);
       API.setUser(res.user);
-      Utils.showToast('Welcome back, ' + res.user.name + '!', 'success');
-      setTimeout(() => window.location.href = 'dashboard.html', 500);
+      Utils.showToast(t('auth_welcome_back') + ', ' + res.user.name + '!', 'success');
+      setTimeout(() => window.location.href = 'dashboard.html', 400);
     } catch (err) {
       Utils.showToast(err.message, 'error');
-      btn.prop('disabled', false).text('Sign In');
+      btn.prop('disabled', false).text(t('auth_signin'));
     }
   });
 
-  // Register
   $('#register-form').on('submit', async function (e) {
     e.preventDefault();
-    const pass = $('#register-password').val();
-    const confirm = $('#register-confirm').val();
-    if (pass !== confirm) {
-      Utils.showToast('Passwords do not match', 'error');
-      return;
+    if ($('#register-password').val() !== $('#register-confirm').val()) {
+      Utils.showToast(t('auth_passwords_mismatch'), 'error'); return;
     }
     const btn = $(this).find('button[type="submit"]');
-    btn.prop('disabled', true).text('Creating account...');
+    btn.prop('disabled', true).text(t('auth_creating'));
     try {
-      const res = await API.register({
-        name: $('#register-name').val().trim(),
-        email: $('#register-email').val().trim(),
-        password: pass,
-      });
+      const res = await API.register({ name: $('#register-name').val().trim(), email: $('#register-email').val().trim(), password: $('#register-password').val() });
       API.setToken(res.token);
       API.setUser(res.user);
-      Utils.showToast('Account created! Welcome!', 'success');
-      setTimeout(() => window.location.href = 'dashboard.html', 500);
+      Utils.showToast(t('auth_account_created'), 'success');
+      setTimeout(() => window.location.href = 'dashboard.html', 400);
     } catch (err) {
       Utils.showToast(err.message, 'error');
-      btn.prop('disabled', false).text('Create Account');
+      btn.prop('disabled', false).text(t('auth_create_account'));
     }
   });
 });

@@ -1,18 +1,17 @@
 {
-  "name": "RentUp",
+  "name": "RentUp — Rental Property Management",
   "short_name": "RentUp",
-  "description": "Rental Property Management for Landlords",
+  "description": "Manage your rental properties, rooms, and monthly billing",
   "start_url": "/dashboard.html",
   "display": "standalone",
-  "background_color": "#07070f",
-  "theme_color": "#7c6cf0",
-  "orientation": "any",
+  "background_color": "#f2f4f8",
+  "theme_color": "#6c5ce7",
+  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>",
       "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/svg+xml"
     }
   ]
 }

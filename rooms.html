@@ -1,86 +1,94 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>RentUp — Rooms</title>
-  <meta name="description" content="Manage rooms within your rental properties.">
+  <meta name="description" content="Manage rooms across your rental properties.">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#7c6cf0">
+  <meta name="theme-color" content="#6c5ce7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('rentup_theme')||'light');</script>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <div class="bg-mesh"></div>
-  <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+  <button class="sidebar-toggle" id="sidebar-toggle"><i data-lucide="menu"></i></button>
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
   <div class="app-layout">
     <aside class="sidebar" id="sidebar">
-      <div class="brand">🏠 RentUp</div>
+      <div class="brand"><i data-lucide="home"></i> <span>RentUp</span></div>
       <nav>
-        <a href="dashboard.html" class="nav-link" data-page="dashboard"><span class="icon">📊</span> Dashboard</a>
-        <a href="properties.html" class="nav-link" data-page="properties"><span class="icon">🏢</span> Properties</a>
-        <a href="rooms.html" class="nav-link" data-page="rooms"><span class="icon">🚪</span> Rooms</a>
-        <a href="billing.html" class="nav-link" data-page="billing"><span class="icon">💰</span> Billing</a>
-        <a href="settings.html" class="nav-link" data-page="settings"><span class="icon">⚙️</span> Settings</a>
+        <a href="dashboard.html" class="nav-link" data-page="dashboard"><i data-lucide="layout-dashboard"></i> <span data-i18n="nav_dashboard">Dashboard</span></a>
+        <a href="properties.html" class="nav-link" data-page="properties"><i data-lucide="building-2"></i> <span data-i18n="nav_properties">Properties</span></a>
+        <a href="rooms.html" class="nav-link" data-page="rooms"><i data-lucide="door-open"></i> <span data-i18n="nav_rooms">Rooms</span></a>
+        <a href="settings.html" class="nav-link" data-page="settings"><i data-lucide="settings"></i> <span data-i18n="nav_settings">Settings</span></a>
       </nav>
       <div class="nav-bottom">
         <div class="user-info">
           <div class="user-avatar">U</div>
           <div><div class="user-name">User</div><div class="user-email">user@email.com</div></div>
         </div>
-        <button class="nav-link" onclick="Utils.logout()"><span class="icon">🚪</span> Sign Out</button>
+        <button class="nav-link" onclick="Utils.logout()"><i data-lucide="log-out"></i> <span data-i18n="nav_signout">Sign Out</span></button>
       </div>
     </aside>
 
     <main class="main-content">
+      <div class="top-bar">
+        <button class="top-bar-btn" id="btn-toggle-theme" title="Toggle theme"><i data-lucide="moon"></i></button>
+        <button class="top-bar-btn" id="btn-toggle-lang" title="Language">हि</button>
+      </div>
+
       <div class="page-header">
         <div>
-          <h1>Rooms</h1>
-          <p class="subtitle">Manage rooms across your properties</p>
+          <h1 data-i18n="room_title">Rooms</h1>
+          <p class="subtitle" data-i18n="room_subtitle">Manage rooms across your properties</p>
         </div>
-        <button class="btn btn-primary" id="btn-add-room">+ Add Room</button>
+        <button class="btn btn-primary" id="btn-add-room"><i data-lucide="plus"></i> <span data-i18n="room_add">+ Add Room</span></button>
       </div>
 
       <div class="filters-bar">
         <select id="filter-property" class="form-control">
-          <option value="">All Properties</option>
+          <option value="" data-i18n="room_all_properties">All Properties</option>
         </select>
       </div>
 
       <div class="cards-grid" id="rooms-grid">
-        <div class="empty-state glass-static" style="grid-column:1/-1;padding:60px">
-          <div class="icon">🚪</div><h3>No rooms yet</h3><p>Add rooms to your properties</p>
-        </div>
+        <div class="empty-state"><div class="e-icon"><i data-lucide="door-open"></i></div><h3 data-i18n="room_no_rooms">No rooms found</h3><p data-i18n="room_no_rooms_desc">Add rooms to your properties</p></div>
       </div>
 
-      <!-- Room Modal -->
+      <!-- Modal -->
       <div class="modal-overlay" id="room-modal">
         <div class="modal glass-static">
           <div class="modal-header">
-            <h2 id="room-modal-title">Add Room</h2>
+            <h2 id="room-modal-title" data-i18n="room_add_title">Add Room</h2>
             <button class="modal-close" onclick="$('#room-modal').removeClass('active')">✕</button>
           </div>
           <form id="room-form">
             <input type="hidden" id="room-id">
             <div class="form-group">
-              <label for="room-property">Property</label>
+              <label for="room-property" data-i18n="room_property">Property</label>
               <select id="room-property" class="form-control" required>
-                <option value="">Select a property</option>
+                <option value="" data-i18n="room_select_property">Select a property</option>
               </select>
             </div>
             <div class="form-group">
-              <label for="room-name">Room Name / Number</label>
-              <input type="text" id="room-name" class="form-control" placeholder="e.g. Room 101" required>
+              <label for="room-name" data-i18n="room_name">Room Name / Number</label>
+              <input type="text" id="room-name" class="form-control" required>
             </div>
             <div class="form-group">
-              <label for="room-rent">Default Monthly Rent</label>
-              <input type="number" id="room-rent" class="form-control" placeholder="e.g. 15000" min="0" step="100" required>
+              <label for="room-tenant" data-i18n="room_tenant">Tenant Name</label>
+              <input type="text" id="room-tenant" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="room-rent" data-i18n="room_rent">Default Monthly Rent</label>
+              <input type="number" id="room-rent" class="form-control" min="0" step="100">
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" onclick="$('#room-modal').removeClass('active')">Cancel</button>
-              <button type="submit" class="btn btn-primary">Save Room</button>
+              <button type="button" class="btn btn-secondary" onclick="$('#room-modal').removeClass('active')" data-i18n="cancel">Cancel</button>
+              <button type="submit" class="btn btn-primary" data-i18n="save">Save</button>
             </div>
           </form>
         </div>
@@ -89,6 +97,8 @@
   </div>
 
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="js/i18n.js"></script>
   <script src="js/api.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/rooms.js"></script>

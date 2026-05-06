@@ -1,66 +1,48 @@
 // ============================================================
-// RentUp — Settings Page Logic
+// RentUp v2 — Settings Logic
 // ============================================================
 
 $(function () {
-  Utils.initTheme();
   if (!Utils.requireAuth()) return;
+  Utils.initTheme();
   Utils.initSidebar('settings');
+  Utils.initTopBar();
+  lucide.createIcons();
+  $('[data-i18n]').each(function () { $(this).text(t($(this).data('i18n'))); });
 
-  // Load settings
   async function loadSettings() {
     try {
       const res = await API.getSettings();
       const s = res.data;
-      $('#electricity-rate').val(s.electricity_rate);
-      $('#currency').val(s.currency);
-
-      const isDark = (s.theme || 'dark') === 'dark';
-      $('#theme-toggle').prop('checked', isDark);
-      Utils.setTheme(isDark ? 'dark' : 'light');
-      localStorage.setItem('rentup_currency', s.currency);
-    } catch (err) {
-      Utils.showToast(err.message, 'error');
-    }
+      $('#setting-currency').val(s.currency || 'INR');
+      Utils.setCurrency(s.currency || 'INR');
+    } catch (e) { Utils.showToast(e.message, 'error'); }
   }
 
-  // Theme toggle live preview
-  $('#theme-toggle').on('change', function () {
-    const theme = $(this).is(':checked') ? 'dark' : 'light';
-    Utils.setTheme(theme);
-  });
-
-  // Save settings
   $('#btn-save-settings').on('click', async function () {
-    const data = {
-      electricity_rate: parseFloat($('#electricity-rate').val()) || 35,
-      currency: $('#currency').val(),
-      theme: $('#theme-toggle').is(':checked') ? 'dark' : 'light',
-    };
+    const currency = $('#setting-currency').val();
+    const theme = localStorage.getItem('rentup_theme') || 'light';
+    const language = getLang();
     try {
-      await API.updateSettings(data);
-      localStorage.setItem('rentup_currency', data.currency);
-      Utils.showToast('Settings saved', 'success');
-    } catch (err) {
-      Utils.showToast(err.message, 'error');
-    }
+      await API.updateSettings({ currency, theme, language });
+      Utils.setCurrency(currency);
+      Utils.cacheClear('settings');
+      Utils.showToast(t('settings_saved'), 'success');
+    } catch (e) { Utils.showToast(e.message, 'error'); }
   });
 
-  // Export backup
-  $('#btn-export-backup').on('click', async function () {
+  $('#btn-export').on('click', async function () {
     try {
-      const res = await API.exportAll();
+      const res = await API.exportData();
       const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'RentUp_Backup_' + new Date().toISOString().slice(0, 10) + '.json';
+      a.download = 'RentUp_Backup_' + new Date().toISOString().split('T')[0] + '.json';
       a.click();
       URL.revokeObjectURL(url);
-      Utils.showToast('Backup downloaded', 'success');
-    } catch (err) {
-      Utils.showToast(err.message, 'error');
-    }
+      Utils.showToast(t('settings_backup_downloaded'), 'success');
+    } catch (e) { Utils.showToast(e.message, 'error'); }
   });
 
   loadSettings();
