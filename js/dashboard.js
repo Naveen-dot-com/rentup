@@ -126,9 +126,12 @@ $(function () {
     const body = $('#recent-body');
     if (!bills.length) { body.html('<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted)">' + t('dash_no_bills') + '</td></tr>'); return; }
     body.html(bills.map(b => `<tr>
-      <td style="font-weight:600">${b.tenant_name || '-'}</td><td>${b.room_name}</td><td>${b.property_name}</td>
-      <td>${Utils.formatMonth(b.month)}</td><td class="amt-cell">${Utils.formatCurrency(b.total_amount)}</td>
-      <td><span class="badge ${Utils.getStatusClass(b.is_paid)}">${Utils.getStatusLabel(b.is_paid)}</span></td>
+      <td data-label="${t('th_tenant')}" style="font-weight:600">${b.tenant_name || '-'}</td>
+      <td data-label="${t('th_room')}">${b.room_name}</td>
+      <td data-label="${t('th_property')}">${b.property_name}</td>
+      <td data-label="${t('th_month')}">${Utils.formatMonth(b.month)}</td>
+      <td data-label="${t('th_total')}" class="amt-cell">${Utils.formatCurrency(b.total_amount)}</td>
+      <td data-label="${t('th_status')}"><span class="badge ${Utils.getStatusClass(b.is_paid)}">${Utils.getStatusLabel(b.is_paid)}</span></td>
     </tr>`).join(''));
   }
 

@@ -55,17 +55,18 @@ $(function () {
     const body = $('#bills-body');
     if (!bills.length) { body.html('<tr><td colspan="11" class="empty-state" style="padding:36px"><div class="e-icon"><i data-lucide="receipt"></i></div><p>'+t('dash_no_bills')+'</p></td></tr>'); lucide.createIcons(); return; }
     body.html(bills.map(b => `<tr>
-      <td style="font-weight:600">${b.tenant_name || '-'}</td>
-      <td>${b.room_name}</td><td>${b.property_name}</td>
-      <td>${Utils.formatMonth(b.month)}</td>
-      <td class="amt-cell">${Utils.formatCurrency(b.rent_amount)}</td>
-      <td>${b.electricity_units}</td>
-      <td class="amt-cell">${Utils.formatCurrency(b.electricity_amount)}</td>
-      <td>${b.gas_units || 0}</td>
-      <td class="amt-cell">${Utils.formatCurrency(b.gas_amount)}</td>
-      <td class="amt-cell total-value">${Utils.formatCurrency(b.total_amount)}</td>
-      <td><button class="badge ${Utils.getStatusClass(b.is_paid)} status-toggle" onclick="cycleStatus(${b.id})">${Utils.getStatusLabel(b.is_paid)}</button></td>
-      <td style="white-space:nowrap">
+      <td data-label="${t('th_tenant')}" style="font-weight:600">${b.tenant_name || '-'}</td>
+      <td data-label="${t('th_room')}">${b.room_name}</td>
+      <td data-label="${t('th_property')}">${b.property_name}</td>
+      <td data-label="${t('th_month')}">${Utils.formatMonth(b.month)}</td>
+      <td data-label="${t('th_rent')}" class="amt-cell">${Utils.formatCurrency(b.rent_amount)}</td>
+      <td data-label="${t('th_elec_units')}">${b.electricity_units}</td>
+      <td data-label="${t('th_elec_amount')}" class="amt-cell">${Utils.formatCurrency(b.electricity_amount)}</td>
+      <td data-label="${t('th_gas_units')}">${b.gas_units || 0}</td>
+      <td data-label="${t('th_gas')}" class="amt-cell">${Utils.formatCurrency(b.gas_amount)}</td>
+      <td data-label="${t('th_total')}" class="amt-cell total-value">${Utils.formatCurrency(b.total_amount)}</td>
+      <td data-label="${t('th_status')}"><button class="badge ${Utils.getStatusClass(b.is_paid)} status-toggle" onclick="cycleStatus(${b.id})">${Utils.getStatusLabel(b.is_paid)}</button></td>
+      <td data-label="${t('th_actions')}" style="white-space:nowrap;justify-content:flex-end;gap:4px">
         <button class="btn btn-icon btn-secondary btn-sm" onclick="editBill(${b.id})" title="${t('edit')}"><i data-lucide="pencil"></i></button>
         <button class="btn btn-icon btn-danger btn-sm" onclick="deleteBill(${b.id})" title="${t('delete')}"><i data-lucide="trash-2"></i></button>
         <button class="btn btn-icon btn-secondary btn-sm" onclick="exportSinglePDF(${b.id})" title="PDF"><i data-lucide="file-text"></i></button>
