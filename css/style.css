@@ -105,7 +105,7 @@ body{font-family:var(--font-body);background:var(--bg-primary);color:var(--text-
 .auth-tab.active{background:var(--accent);color:#fff}
 
 /* App Layout */
-.app-layout{display:flex;min-height:100vh;position:relative;z-index:1}
+.app-layout{display:flex;min-height:100vh;position:relative;z-index:1;width:100%;overflow-x:hidden}
 
 /* Sidebar */
 .sidebar{width:var(--sidebar-width);position:fixed;top:0;left:0;bottom:0;padding:76px 14px 20px;display:flex;flex-direction:column;background:var(--glass-bg);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border-right:1px solid var(--glass-border);z-index:100;transition:width 0.3s cubic-bezier(0.4,0,0.2,1), transform 0.3s cubic-bezier(0.4,0,0.2,1);overflow-x:hidden}
@@ -321,7 +321,7 @@ textarea.form-control{resize:vertical;min-height:80px}
 }
 
 /* Charts */
-.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
 .chart-card{padding:20px;height:280px}
 @media(max-width:768px){.charts-grid{grid-template-columns:1fr}.chart-card{height:220px}}
 

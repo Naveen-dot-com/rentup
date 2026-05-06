@@ -31,17 +31,24 @@ const Utils = (() => {
   function getStatusClass(isPaid) { return isPaid === 1 ? 'badge-success' : isPaid === 2 ? 'badge-warning' : 'badge-danger'; }
 
   // Generate PDF from HTML string using html2pdf
-  async function generateHTMLPDF(htmlStr, filename) {
+  async function generateHTMLPDF(htmlStr, filename, isLandscape = false) {
     const temp = document.createElement('div');
     temp.innerHTML = htmlStr;
+    temp.style.position = 'absolute';
+    temp.style.left = '-9999px';
+    temp.style.top = '0';
     document.body.appendChild(temp);
+    
+    // We get the actual width of the wrapper div to tell html2canvas the required windowWidth
+    const wrapper = temp.querySelector('div');
+    const width = wrapper ? parseInt(wrapper.style.width) || temp.scrollWidth : temp.scrollWidth;
     
     const opt = {
       margin: 10,
       filename: filename,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true, windowWidth: width + 20 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: isLandscape ? 'landscape' : 'portrait' }
     };
     
     await html2pdf().set(opt).from(temp).save();

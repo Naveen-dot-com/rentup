@@ -102,15 +102,41 @@ $(function () {
     const room = allRooms.find(r => r.id === b.room_id);
     $('#bill-property').val(room ? room.property_id : '').trigger('change');
     setTimeout(() => $('#bill-room').val(b.room_id), 50);
-    $('#bill-month').val(b.month); $('#bill-rent').val(b.rent_amount); $('#bill-elec-units').val(b.electricity_units);
+    $('#bill-month').val(b.month); $('#bill-rent').val(b.rent_amount);
+    $('#bill-elec-prev').val(b.elec_reading_prev || 0); $('#bill-elec-current').val(b.elec_reading || 0); $('#bill-elec-units').val(b.electricity_units);
     $('#bill-gas-units').val(b.gas_units); $('#bill-gas-amount').val(b.gas_amount); $('#bill-notes').val(b.notes || '');
     $('#bill-modal').addClass('active');
   };
 
+  async function autoFillPrevReading() {
+    const roomId = $('#bill-room').val();
+    const month = $('#bill-month').val();
+    const propId = $('#bill-property').val();
+    if (!roomId || !month || !propId || $('#bill-id').val()) return; // don't auto-fill on edit
+    const prevMonth = Utils.getPrevMonth(month);
+    try {
+      const prevBills = (await API.getBills(prevMonth, propId)).data;
+      const prevBill = prevBills.find(b => String(b.room_id) === String(roomId));
+      if (prevBill) {
+        $('#bill-elec-prev').val(prevBill.elec_reading || 0);
+      } else {
+        $('#bill-elec-prev').val('');
+      }
+    } catch(e) {}
+  }
+
+  $('#bill-room, #bill-month').on('change', autoFillPrevReading);
+
   $('#bill-form').on('submit', async function (e) {
     e.preventDefault(); const roomId = $('#bill-room').val();
     if (!roomId) { Utils.showToast(t('bill_select_room'), 'error'); return; }
-    const data = { room_id: parseInt(roomId), month: $('#bill-month').val(), rent_amount: parseFloat($('#bill-rent').val()) || undefined, electricity_units: parseFloat($('#bill-elec-units').val()) || 0, gas_units: parseFloat($('#bill-gas-units').val()) || 0, gas_amount: parseFloat($('#bill-gas-amount').val()) || 0, notes: $('#bill-notes').val() };
+    const elecPrev = parseFloat($('#bill-elec-prev').val()) || 0;
+    const elecCurr = parseFloat($('#bill-elec-current').val()) || 0;
+    let units = elecCurr >= elecPrev ? elecCurr - elecPrev : 0;
+    if ($('#bill-elec-units').val() && !$('#bill-elec-prev').val() && !$('#bill-elec-current').val()) {
+        units = parseFloat($('#bill-elec-units').val()); // fallback if manual units used
+    }
+    const data = { room_id: parseInt(roomId), month: $('#bill-month').val(), rent_amount: parseFloat($('#bill-rent').val()) || undefined, elec_reading_prev: elecPrev, elec_reading: elecCurr, electricity_units: units, gas_units: parseFloat($('#bill-gas-units').val()) || 0, gas_amount: parseFloat($('#bill-gas-amount').val()) || 0, notes: $('#bill-notes').val() };
     const id = $('#bill-id').val();
     try { if (id) { await API.updateBill(id, data); Utils.showToast(t('bill_updated'), 'success'); } else { await API.createBill(data); Utils.showToast(t('bill_created'), 'success'); } $('#bill-modal').removeClass('active'); loadBills(); } catch (err) { Utils.showToast(err.message, 'error'); }
   });
@@ -130,7 +156,7 @@ $(function () {
     const curML = Utils.formatMonth(bill.month);
     
     const html = `
-      <div id="pdf-export-wrap" style="font-family: sans-serif; padding: 20px; color: #333; width: 800px; background: #fff;">
+      <div id="pdf-export-wrap" style="font-family: sans-serif; padding: 20px; color: #333; width: 700px; background: #fff;">
         <h1 style="color: #6c5ce7; margin: 0 0 10px 0; font-size: 28px;">RentUp</h1>
         <h3 style="color: #555; margin: 0 0 20px 0; font-size: 18px;">${t('pdf_title')}</h3>
         <table style="width: 100%; margin-bottom: 25px; font-size: 14px; border-collapse: collapse;">
@@ -221,7 +247,7 @@ $(function () {
     });
 
     const html = `
-      <div id="pdf-export-wrap" style="font-family: sans-serif; padding: 20px; color: #333; width: 1000px; background: #fff;">
+      <div id="pdf-export-wrap" style="font-family: sans-serif; padding: 20px; color: #333; width: 1040px; background: #fff;">
         <h1 style="color: #6c5ce7; margin: 0 0 10px 0; font-size: 24px;">RentUp</h1>
         <h3 style="color: #555; margin: 0 0 10px 0; font-size: 16px;">${t('bill_consolidated_title')}</h3>
         <p style="margin: 0 0 20px 0; font-size: 14px;"><strong>${t('th_total')}:</strong> ${sym} ${total.toLocaleString()}</p>
@@ -248,7 +274,7 @@ $(function () {
     `;
 
     Utils.showToast(t('loading') || 'Generating PDF...', 'info');
-    await Utils.generateHTMLPDF(html, 'RentUp_All_Bills.pdf');
+    await Utils.generateHTMLPDF(html, 'RentUp_All_Bills.pdf', true);
     Utils.showToast(t('bill_pdf_downloaded'), 'success');
   });
 
