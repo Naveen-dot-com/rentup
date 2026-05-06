@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>RentUp — Billing</title>
   <meta name="description" content="Generate and manage monthly bills for your rental properties.">
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#6c5ce7">
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json"><meta name="theme-color" content="#6c5ce7"><meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
   <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('rentup_theme')||'light');</script>
   <link rel="stylesheet" href="css/style.css">
@@ -26,36 +24,39 @@
         <a href="rooms.html" class="nav-link" data-page="rooms"><i data-lucide="door-open"></i> <span data-i18n="nav_rooms">Rooms</span></a>
         <a href="settings.html" class="nav-link" data-page="settings"><i data-lucide="settings"></i> <span data-i18n="nav_settings">Settings</span></a>
       </nav>
-      <div class="nav-bottom">
-        <div class="user-info"><div class="user-avatar">U</div><div><div class="user-name">User</div><div class="user-email">user@email.com</div></div></div>
-        <button class="nav-link" onclick="Utils.logout()"><i data-lucide="log-out"></i> <span data-i18n="nav_signout">Sign Out</span></button>
-      </div>
+      <div class="nav-bottom"><div class="user-info"><div class="user-avatar">U</div><div><div class="user-name">User</div><div class="user-email">user@email.com</div></div></div><button class="nav-link" onclick="Utils.logout()"><i data-lucide="log-out"></i> <span data-i18n="nav_signout">Sign Out</span></button></div>
     </aside>
     <main class="main-content">
-      <div class="top-bar">
-        <button class="top-bar-btn" id="btn-toggle-theme" title="Toggle theme"><i data-lucide="moon"></i></button>
-        <button class="top-bar-btn" id="btn-toggle-lang" title="Language">हि</button>
-      </div>
+      <div class="top-bar"><button class="top-bar-btn" id="btn-toggle-theme" title="Toggle theme"><i data-lucide="moon"></i></button><button class="top-bar-btn" id="btn-toggle-lang" title="Language">हि</button></div>
       <div class="page-header">
         <div><h1 data-i18n="nav_billing">Billing</h1><p class="subtitle" data-i18n="dash_billing_subtitle">Generate and manage monthly bills</p></div>
         <div class="actions-row" style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-secondary btn-sm" id="btn-export-all-pdf"><i data-lucide="file-text"></i> <span data-i18n="bill_export_all_pdf">Export All PDF</span></button>
           <button class="btn btn-secondary btn-sm" id="btn-export-all-excel"><i data-lucide="file-spreadsheet"></i> <span data-i18n="bill_export_all_excel">Export All Excel</span></button>
-          <button class="btn btn-primary btn-sm" id="btn-add-bill"><i data-lucide="plus"></i> <span data-i18n="bill_new">+ New Bill</span></button>
+          <button class="btn btn-primary btn-sm" id="btn-add-bill"><i data-lucide="plus"></i> <span data-i18n="bill_new">New Bill</span></button>
         </div>
       </div>
+      <!-- Global Filters -->
       <div class="filters-bar">
-        <input type="month" id="filter-month" class="form-control" title="Month">
+        <select id="filter-year" class="form-control" style="width:110px"></select>
+        <select id="filter-month-num" class="form-control" style="width:130px"><option value="">All Months</option></select>
         <select id="filter-property" class="form-control"><option value="" data-i18n="room_all_properties">All Properties</option></select>
       </div>
       <div class="glass-static" style="padding:16px">
         <div class="table-container">
-          <table>
+          <table id="bills-table">
             <thead><tr>
-              <th data-i18n="th_tenant">Tenant</th><th data-i18n="th_room">Room</th><th data-i18n="th_property">Property</th>
-              <th data-i18n="th_month">Month</th><th data-i18n="th_rent">Rent</th><th data-i18n="th_elec_units">Elec Units</th>
-              <th data-i18n="th_elec_amount">Elec Amt</th><th data-i18n="th_gas">Gas</th><th data-i18n="th_total">Total</th>
-              <th data-i18n="th_status">Status</th><th data-i18n="th_actions">Actions</th>
+              <th data-sort="tenant_name" data-i18n="th_tenant">Tenant <span class="sort-icon">⇅</span></th>
+              <th data-sort="room_name" data-i18n="th_room">Room <span class="sort-icon">⇅</span></th>
+              <th data-sort="property_name" data-i18n="th_property">Property <span class="sort-icon">⇅</span></th>
+              <th data-sort="month" data-i18n="th_month">Month <span class="sort-icon">⇅</span></th>
+              <th data-sort="rent_amount" data-i18n="th_rent">Rent <span class="sort-icon">⇅</span></th>
+              <th data-sort="electricity_units" data-i18n="th_elec_units">Elec Units <span class="sort-icon">⇅</span></th>
+              <th data-sort="electricity_amount" data-i18n="th_elec_amount">Elec Amt <span class="sort-icon">⇅</span></th>
+              <th data-sort="gas_amount" data-i18n="th_gas">Gas <span class="sort-icon">⇅</span></th>
+              <th data-sort="total_amount" data-i18n="th_total">Total <span class="sort-icon">⇅</span></th>
+              <th data-sort="is_paid" data-i18n="th_status">Status <span class="sort-icon">⇅</span></th>
+              <th data-i18n="th_actions">Actions</th>
             </tr></thead>
             <tbody id="bills-body"><tr><td colspan="11" class="empty-state" style="padding:36px"><div class="e-icon"><i data-lucide="receipt"></i></div><p data-i18n="dash_no_bills">No bills found</p></td></tr></tbody>
           </table>
@@ -86,6 +87,7 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="js/fontData.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/api.js"></script>
   <script src="js/utils.js"></script>

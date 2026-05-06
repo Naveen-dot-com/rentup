@@ -59,7 +59,7 @@ const I18N = {
     // Properties
     prop_title: 'Properties',
     prop_subtitle: 'Manage your rental properties',
-    prop_add: '+ Add Property',
+    prop_add: 'Add Property',
     prop_edit: 'Edit Property',
     prop_add_title: 'Add Property',
     prop_name: 'Property Name',
@@ -80,7 +80,7 @@ const I18N = {
     // Rooms
     room_title: 'Rooms',
     room_subtitle: 'Manage rooms across your properties',
-    room_add: '+ Add Room',
+    room_add: 'Add Room',
     room_edit: 'Edit Room',
     room_add_title: 'Add Room',
     room_property: 'Property',
@@ -103,7 +103,7 @@ const I18N = {
     room_all_properties: 'All Properties',
 
     // Billing
-    bill_new: '+ New Bill',
+    bill_new: 'New Bill',
     bill_new_title: 'New Bill',
     bill_edit_title: 'Edit Bill',
     bill_export_excel: 'Export Excel',
@@ -243,7 +243,7 @@ const I18N = {
     // Properties
     prop_title: 'संपत्तियाँ',
     prop_subtitle: 'अपनी किराये की संपत्तियाँ प्रबंधित करें',
-    prop_add: '+ संपत्ति जोड़ें',
+    prop_add: 'संपत्ति जोड़ें',
     prop_edit: 'संपत्ति संपादित करें',
     prop_add_title: 'संपत्ति जोड़ें',
     prop_name: 'संपत्ति का नाम',
@@ -264,7 +264,7 @@ const I18N = {
     // Rooms
     room_title: 'कमरे',
     room_subtitle: 'अपनी संपत्तियों में कमरे प्रबंधित करें',
-    room_add: '+ कमरा जोड़ें',
+    room_add: 'कमरा जोड़ें',
     room_edit: 'कमरा संपादित करें',
     room_add_title: 'कमरा जोड़ें',
     room_property: 'संपत्ति',
@@ -287,7 +287,7 @@ const I18N = {
     room_all_properties: 'सभी संपत्तियाँ',
 
     // Billing
-    bill_new: '+ नया बिल',
+    bill_new: 'नया बिल',
     bill_new_title: 'नया बिल',
     bill_edit_title: 'बिल संपादित करें',
     bill_export_excel: 'एक्सेल निर्यात',

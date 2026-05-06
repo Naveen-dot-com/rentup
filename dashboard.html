@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>RentUp — Dashboard</title>
   <meta name="description" content="Dashboard — View your rental property statistics and revenue charts.">
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#6c5ce7">
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json"><meta name="theme-color" content="#6c5ce7"><meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
   <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('rentup_theme')||'light');</script>
   <link rel="stylesheet" href="css/style.css">
@@ -26,16 +24,10 @@
         <a href="rooms.html" class="nav-link" data-page="rooms"><i data-lucide="door-open"></i> <span data-i18n="nav_rooms">Rooms</span></a>
         <a href="settings.html" class="nav-link" data-page="settings"><i data-lucide="settings"></i> <span data-i18n="nav_settings">Settings</span></a>
       </nav>
-      <div class="nav-bottom">
-        <div class="user-info"><div class="user-avatar">U</div><div><div class="user-name">User</div><div class="user-email">user@email.com</div></div></div>
-        <button class="nav-link" onclick="Utils.logout()"><i data-lucide="log-out"></i> <span data-i18n="nav_signout">Sign Out</span></button>
-      </div>
+      <div class="nav-bottom"><div class="user-info"><div class="user-avatar">U</div><div><div class="user-name">User</div><div class="user-email">user@email.com</div></div></div><button class="nav-link" onclick="Utils.logout()"><i data-lucide="log-out"></i> <span data-i18n="nav_signout">Sign Out</span></button></div>
     </aside>
     <main class="main-content">
-      <div class="top-bar">
-        <button class="top-bar-btn" id="btn-toggle-theme" title="Toggle theme"><i data-lucide="moon"></i></button>
-        <button class="top-bar-btn" id="btn-toggle-lang" title="Language">हि</button>
-      </div>
+      <div class="top-bar"><button class="top-bar-btn" id="btn-toggle-theme" title="Toggle theme"><i data-lucide="moon"></i></button><button class="top-bar-btn" id="btn-toggle-lang" title="Language">हि</button></div>
       <div class="page-header">
         <div><h1 data-i18n="dash_title">Dashboard</h1><p class="subtitle" data-i18n="dash_subtitle">Welcome back! Here's your overview.</p></div>
         <button class="btn btn-secondary btn-sm" id="btn-dash-pdf"><i data-lucide="file-text"></i> <span data-i18n="dash_download_pdf">Download Report</span></button>
@@ -46,17 +38,33 @@
         <div class="stat-card glass slide-up"><div class="stat-icon yellow"><i data-lucide="indian-rupee"></i></div><div class="stat-value" id="stat-revenue">--</div><div class="stat-label" data-i18n="dash_monthly_revenue">Monthly Revenue</div></div>
         <div class="stat-card glass slide-up"><div class="stat-icon red"><i data-lucide="alert-circle"></i></div><div class="stat-value" id="stat-unpaid">--</div><div class="stat-label" data-i18n="dash_unpaid_bills">Unpaid Bills</div></div>
       </div>
-      <!-- Charts -->
-      <div class="section-divider"><h2><i data-lucide="bar-chart-3"></i> <span data-i18n="dash_charts">Revenue Overview</span></h2><p class="subtitle" data-i18n="dash_revenue_chart">Monthly Breakdown</p></div>
+      <!-- Chart Filters -->
+      <div class="section-divider"><h2><i data-lucide="bar-chart-3"></i> <span data-i18n="dash_charts">Revenue Overview</span></h2></div>
+      <div class="filters-bar" style="margin-bottom:12px">
+        <select id="chart-year" class="form-control" style="width:110px"></select>
+        <select id="chart-property" class="form-control"><option value="">All Properties</option></select>
+        <select id="chart-room" class="form-control"><option value="">All Rooms</option></select>
+      </div>
       <div class="charts-grid">
-        <div class="chart-card glass-static"><canvas id="chart-revenue"></canvas></div>
-        <div class="chart-card glass-static"><canvas id="chart-breakdown"></canvas></div>
+        <div class="chart-card glass-static"><h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)" data-i18n="dash_revenue_chart">Monthly Breakdown</h3><canvas id="chart-revenue"></canvas></div>
+        <div class="chart-card glass-static"><h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)">Rent Collection</h3><canvas id="chart-rent"></canvas></div>
+      </div>
+      <div class="charts-grid" style="margin-top:16px">
+        <div class="chart-card glass-static"><h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)">Electricity Consumption (Units)</h3><canvas id="chart-elec"></canvas></div>
+        <div class="chart-card glass-static"><h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)">Gas Consumption</h3><canvas id="chart-gas"></canvas></div>
       </div>
       <!-- Recent Activity -->
       <div class="section-divider" style="margin-top:28px"><h2><i data-lucide="clock"></i> <span data-i18n="dash_recent_bills">Recent Activity</span></h2></div>
       <div class="glass-static" style="padding:16px">
         <div class="table-container">
-          <table><thead><tr><th data-i18n="th_tenant">Tenant</th><th data-i18n="th_room">Room</th><th data-i18n="th_property">Property</th><th data-i18n="th_month">Month</th><th data-i18n="th_total">Total</th><th data-i18n="th_status">Status</th></tr></thead>
+          <table id="recent-table"><thead><tr>
+            <th data-sort="tenant_name" data-i18n="th_tenant">Tenant <span class="sort-icon">⇅</span></th>
+            <th data-sort="room_name" data-i18n="th_room">Room <span class="sort-icon">⇅</span></th>
+            <th data-sort="property_name" data-i18n="th_property">Property <span class="sort-icon">⇅</span></th>
+            <th data-sort="month" data-i18n="th_month">Month <span class="sort-icon">⇅</span></th>
+            <th data-sort="total_amount" data-i18n="th_total">Total <span class="sort-icon">⇅</span></th>
+            <th data-sort="is_paid" data-i18n="th_status">Status <span class="sort-icon">⇅</span></th>
+          </tr></thead>
           <tbody id="recent-body"><tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted)" data-i18n="dash_no_bills">No bills found</td></tr></tbody></table>
         </div>
       </div>
@@ -67,6 +75,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="js/fontData.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/api.js"></script>
   <script src="js/utils.js"></script>
