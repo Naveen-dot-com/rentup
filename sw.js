@@ -1,5 +1,5 @@
 // RentUp v2 — Service Worker
-const CACHE_NAME = 'rentup-v19';
+const CACHE_NAME = 'rentup-v20';
 const ASSETS = [
   '/',
   '/index.html',
