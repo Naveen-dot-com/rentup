@@ -30,21 +30,23 @@ const Utils = (() => {
   function getStatusLabel(isPaid) { return isPaid === 1 ? t('status_paid') : isPaid === 2 ? t('status_partial') : t('status_unpaid'); }
   function getStatusClass(isPaid) { return isPaid === 1 ? 'badge-success' : isPaid === 2 ? 'badge-warning' : 'badge-danger'; }
 
-  // ALWAYS use embedded Noto font for PDF (supports Hindi + ₹ symbol)
-  async function preparePDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    if (typeof NOTO_FONT_BASE64 !== 'undefined' && NOTO_FONT_BASE64) {
-      doc.addFileToVFS('NotoSans.ttf', NOTO_FONT_BASE64);
-      doc.addFont('NotoSans.ttf', 'NotoSans', 'normal');
-      doc.addFont('NotoSans.ttf', 'NotoSans', 'bold');
-      doc.setFont('NotoSans', 'normal');
-    }
-    return doc;
+  // Generate PDF from HTML string using html2pdf
+  async function generateHTMLPDF(htmlStr, filename) {
+    const temp = document.createElement('div');
+    temp.innerHTML = htmlStr;
+    document.body.appendChild(temp);
+    
+    const opt = {
+      margin: 10,
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    await html2pdf().set(opt).from(temp).save();
+    document.body.removeChild(temp);
   }
-  // Helper to set font style without losing custom font
-  function pdfBold(doc) { doc.setFont('NotoSans', 'bold'); }
-  function pdfNormal(doc) { doc.setFont('NotoSans', 'normal'); }
 
-  return { initTheme, setTheme, toggleTheme, toggleLang, initTopBar, showToast, setCurrency, getCurrencySymbol, formatCurrency, formatCurrencyNum, getCurrentMonth, formatMonth, formatMonthFull, formatDate, getPrevMonth, requireAuth, initSidebar, logout, confirm, cacheSet, cacheGet, cacheClear, getStatusLabel, getStatusClass, preparePDF, pdfBold, pdfNormal };
+  return { initTheme, setTheme, toggleTheme, toggleLang, initTopBar, showToast, setCurrency, getCurrencySymbol, formatCurrency, formatCurrencyNum, getCurrentMonth, formatMonth, formatMonthFull, formatDate, getPrevMonth, requireAuth, initSidebar, logout, confirm, cacheSet, cacheGet, cacheClear, getStatusLabel, getStatusClass, generateHTMLPDF };
 })();

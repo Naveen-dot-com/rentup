@@ -125,27 +125,65 @@ $(function () {
   // Single Bill PDF — uses embedded Noto font (Hindi + ₹)
   window.exportSinglePDF = async function (id) {
     const bill = currentBills.find(b => b.id === id); if (!bill) return;
-    const doc = await Utils.preparePDF();
     const sym = Utils.getCurrencySymbol();
     const prevML = Utils.formatMonth(Utils.getPrevMonth(bill.month));
     const curML = Utils.formatMonth(bill.month);
-    doc.setFontSize(18); doc.setTextColor(108, 92, 231); doc.text('RentUp', 14, 20);
-    doc.setFontSize(11); doc.setTextColor(100); doc.text(t('pdf_title'), 14, 28);
-    doc.setFontSize(10); doc.setTextColor(60);
-    const info = [[t('pdf_tenant'), bill.tenant_name || '-'], [t('pdf_room'), bill.room_name], [t('pdf_property'), bill.property_name], [t('pdf_month'), curML], [t('pdf_status'), Utils.getStatusLabel(bill.is_paid)], [t('pdf_generated'), new Date().toLocaleDateString()]];
-    let y = 38;
-    info.forEach(([l, v]) => { Utils.pdfBold(doc); doc.text(l + ':', 14, y); Utils.pdfNormal(doc); doc.text(String(v), 65, y); y += 7; });
-    y += 4; doc.setFontSize(9); doc.setTextColor(130);
-    doc.text(t('pdf_elec_gas_note', { prevMonth: prevML }), 14, y); y += 5;
-    doc.text(t('pdf_rent_note', { currentMonth: curML }), 14, y); y += 8;
-    doc.autoTable({ startY: y,
-      head: [[t('pdf_item'), t('pdf_details'), t('pdf_amount')]],
-      body: [[t('pdf_rent'), t('pdf_rent_detail', { month: curML }), sym + ' ' + bill.rent_amount.toLocaleString()], [t('pdf_electricity'), t('pdf_elec_detail', { units: bill.electricity_units, rate: bill.electricity_rate, month: prevML }), sym + ' ' + bill.electricity_amount.toLocaleString()], [t('th_gas'), t('th_gas_units') + ': ' + (bill.gas_units||0), sym + ' ' + bill.gas_amount.toLocaleString()]],
-      foot: [[t('pdf_total'), '', sym + ' ' + bill.total_amount.toLocaleString()]],
-      theme: 'grid', headStyles: { fillColor: [108, 92, 231], textColor: 255, fontStyle: 'bold', fontSize: 10 }, footStyles: { fillColor: [240, 240, 250], textColor: [30, 30, 60], fontStyle: 'bold', fontSize: 11 }, styles: { fontSize: 9.5, cellPadding: 6, font: 'NotoSans' },
-    });
-    if (bill.notes) { const fy = doc.lastAutoTable.finalY + 10; doc.setFontSize(10); doc.setTextColor(80); Utils.pdfBold(doc); doc.text(t('pdf_notes') + ':', 14, fy); Utils.pdfNormal(doc); doc.text(bill.notes, 14, fy + 7); }
-    doc.save(`RentUp_${bill.tenant_name || bill.room_name}_${bill.month}.pdf`);
+    
+    const html = `
+      <div style="font-family: sans-serif; padding: 20px; color: #333; width: 800px; max-width: 100%;">
+        <h1 style="color: #6c5ce7; margin: 0 0 10px 0; font-size: 28px;">RentUp</h1>
+        <h3 style="color: #555; margin: 0 0 20px 0; font-size: 18px;">${t('pdf_title')}</h3>
+        <table style="width: 100%; margin-bottom: 25px; font-size: 14px; border-collapse: collapse;">
+          <tr><td style="padding: 6px 0; width: 30%;"><strong>${t('pdf_tenant')}:</strong></td><td style="padding: 6px 0;">${bill.tenant_name || '-'}</td></tr>
+          <tr><td style="padding: 6px 0;"><strong>${t('pdf_room')}:</strong></td><td style="padding: 6px 0;">${bill.room_name}</td></tr>
+          <tr><td style="padding: 6px 0;"><strong>${t('pdf_property')}:</strong></td><td style="padding: 6px 0;">${bill.property_name}</td></tr>
+          <tr><td style="padding: 6px 0;"><strong>${t('pdf_month')}:</strong></td><td style="padding: 6px 0;">${curML}</td></tr>
+          <tr><td style="padding: 6px 0;"><strong>${t('pdf_status')}:</strong></td><td style="padding: 6px 0;">${Utils.getStatusLabel(bill.is_paid)}</td></tr>
+          <tr><td style="padding: 6px 0;"><strong>${t('pdf_generated')}:</strong></td><td style="padding: 6px 0;">${new Date().toLocaleDateString()}</td></tr>
+        </table>
+        
+        <p style="font-size: 12px; color: #666; margin: 0 0 5px 0;">${t('pdf_elec_gas_note', { prevMonth: prevML })}</p>
+        <p style="font-size: 12px; color: #666; margin: 0 0 15px 0;">${t('pdf_rent_note', { currentMonth: curML })}</p>
+        
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+          <thead>
+            <tr style="background: #6c5ce7; color: #fff;">
+              <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">${t('pdf_item')}</th>
+              <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">${t('pdf_details')}</th>
+              <th style="padding: 10px; text-align: right; border: 1px solid #ddd;">${t('pdf_amount')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;">${t('pdf_rent')}</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${t('pdf_rent_detail', { month: curML })}</td>
+              <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">${sym} ${bill.rent_amount.toLocaleString()}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;">${t('pdf_electricity')}</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${t('pdf_elec_detail', { units: bill.electricity_units, rate: bill.electricity_rate, month: prevML })}</td>
+              <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">${sym} ${bill.electricity_amount.toLocaleString()}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border: 1px solid #ddd;">${t('th_gas')}</td>
+              <td style="padding: 10px; border: 1px solid #ddd;">${t('th_gas_units')}: ${bill.gas_units||0}</td>
+              <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">${sym} ${bill.gas_amount.toLocaleString()}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr style="background: #f0f0fa;">
+              <td colspan="2" style="padding: 10px; font-weight: bold; border: 1px solid #ddd;">${t('pdf_total')}</td>
+              <td style="padding: 10px; font-weight: bold; text-align: right; border: 1px solid #ddd;">${sym} ${bill.total_amount.toLocaleString()}</td>
+            </tr>
+          </tfoot>
+        </table>
+        
+        ${bill.notes ? `<div style="margin-top: 20px;"><strong style="color: #444;">${t('pdf_notes')}:</strong><p style="margin: 5px 0 0 0; color: #555;">${bill.notes}</p></div>` : ''}
+      </div>
+    `;
+    
+    Utils.showToast(t('loading') || 'Generating PDF...', 'info');
+    await Utils.generateHTMLPDF(html, `RentUp_${bill.tenant_name || bill.room_name}_${bill.month}.pdf`);
     Utils.showToast(t('bill_pdf_downloaded'), 'success');
   };
 
@@ -160,18 +198,56 @@ $(function () {
   // Consolidated PDF
   $('#btn-export-all-pdf').on('click', async function () {
     if (!currentBills.length) { Utils.showToast(t('bill_no_bills_export'), 'error'); return; }
-    const doc = await Utils.preparePDF();
     const sym = Utils.getCurrencySymbol();
-    doc.setFontSize(18); doc.setTextColor(108, 92, 231); doc.text('RentUp', 14, 20);
-    doc.setFontSize(12); doc.setTextColor(60); doc.text(t('bill_consolidated_title'), 14, 30);
     const total = currentBills.reduce((s, b) => s + b.total_amount, 0);
-    doc.setFontSize(10); doc.text(t('th_total') + ': ' + sym + ' ' + total.toLocaleString(), 14, 38);
-    doc.autoTable({ startY: 44,
-      head: [[t('th_tenant'), t('th_room'), t('th_property'), t('th_rent'), t('th_elec_units'), t('th_elec_amount'), t('th_gas_units'), t('th_gas'), t('th_total')]],
-      body: currentBills.map(b => [b.tenant_name || '-', b.room_name, b.property_name, sym+' '+b.rent_amount.toLocaleString(), b.electricity_units, sym+' '+b.electricity_amount.toLocaleString(), b.gas_units||0, sym+' '+b.gas_amount.toLocaleString(), sym+' '+b.total_amount.toLocaleString()]),
-      theme: 'grid', headStyles: { fillColor: [108, 92, 231], textColor: 255, fontSize: 8 }, styles: { fontSize: 8, cellPadding: 4, font: 'NotoSans' },
+    
+    let rows = '';
+    currentBills.forEach(b => {
+      rows += `
+        <tr>
+          <td style="padding: 8px; border: 1px solid #ddd;">${b.tenant_name || '-'}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${b.room_name}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${b.property_name}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${sym} ${b.rent_amount.toLocaleString()}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${b.electricity_units}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${sym} ${b.electricity_amount.toLocaleString()}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${b.gas_units || 0}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${sym} ${b.gas_amount.toLocaleString()}</td>
+          <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">${sym} ${b.total_amount.toLocaleString()}</td>
+        </tr>
+      `;
     });
-    doc.save('RentUp_All_Bills.pdf'); Utils.showToast(t('bill_pdf_downloaded'), 'success');
+
+    const html = `
+      <div style="font-family: sans-serif; padding: 20px; color: #333; width: 1000px; max-width: 100%;">
+        <h1 style="color: #6c5ce7; margin: 0 0 10px 0; font-size: 24px;">RentUp</h1>
+        <h3 style="color: #555; margin: 0 0 10px 0; font-size: 16px;">${t('bill_consolidated_title')}</h3>
+        <p style="margin: 0 0 20px 0; font-size: 14px;"><strong>${t('th_total')}:</strong> ${sym} ${total.toLocaleString()}</p>
+        
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+          <thead>
+            <tr style="background: #6c5ce7; color: #fff;">
+              <th style="padding: 8px; border: 1px solid #ddd;">${t('th_tenant')}</th>
+              <th style="padding: 8px; border: 1px solid #ddd;">${t('th_room')}</th>
+              <th style="padding: 8px; border: 1px solid #ddd;">${t('th_property')}</th>
+              <th style="padding: 8px; border: 1px solid #ddd;">${t('th_rent')}</th>
+              <th style="padding: 8px; border: 1px solid #ddd;">${t('th_elec_units')}</th>
+              <th style="padding: 8px; border: 1px solid #ddd;">${t('th_elec_amount')}</th>
+              <th style="padding: 8px; border: 1px solid #ddd;">${t('th_gas_units')}</th>
+              <th style="padding: 8px; border: 1px solid #ddd;">${t('th_gas')}</th>
+              <th style="padding: 8px; border: 1px solid #ddd;">${t('th_total')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    Utils.showToast(t('loading') || 'Generating PDF...', 'info');
+    await Utils.generateHTMLPDF(html, 'RentUp_All_Bills.pdf');
+    Utils.showToast(t('bill_pdf_downloaded'), 'success');
   });
 
   // Consolidated Excel
