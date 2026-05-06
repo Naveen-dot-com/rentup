@@ -1,5 +1,5 @@
 // ============================================================
-// RentUp v4 — Shared Utilities
+// RentUp v5 — Shared Utilities Perplexity
 // ============================================================
 const CURRENCY_SYMBOLS = { INR: '₹', PKR: '₨', USD: '$', EUR: '€', GBP: '£' };
 const Utils = (() => {
@@ -31,26 +31,43 @@ const Utils = (() => {
   function getStatusClass(isPaid) { return isPaid === 1 ? 'badge-success' : isPaid === 2 ? 'badge-warning' : 'badge-danger'; }
 
   // Generate PDF from HTML string using html2pdf
-  // Generate PDF from HTML string using html2pdf
+  // Fixed: consistent A4 output on all devices (no mobile reflow, no blank pages)
   async function generateHTMLPDF(htmlStr, filename, isLandscape = false) {
-    const widthMatch = htmlStr.match(/width:\s*(\d+)px/);
-    const width = widthMatch ? parseInt(widthMatch[1]) : (isLandscape ? 1040 : 700);
-    
+    // 1. Render into a fixed-width off-screen container so mobile CSS never applies
+    const pxWidth = isLandscape ? 1123 : 794;
+    const container = document.createElement('div');
+    container.style.cssText =
+      'position:fixed;top:-99999px;left:-99999px;z-index:-1;' +
+      'width:' + pxWidth + 'px;background:#fff;font-family:sans-serif;box-sizing:border-box;';
+    container.innerHTML = htmlStr;
+    document.body.appendChild(container);
+
+    // 2. Wait for layout/fonts to settle
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
     const opt = {
-      margin: 10,
+      margin: [8, 8, 8, 8],
       filename: filename,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { 
-        scale: 2, 
-        useCORS: true, 
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
         letterRendering: true,
-        width: width,
-        windowWidth: width + 50
+        width: pxWidth,
+        windowWidth: pxWidth,
+        scrollX: 0,
+        scrollY: 0,
+        backgroundColor: '#ffffff',
       },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: isLandscape ? 'landscape' : 'portrait' }
+      jsPDF: { unit: 'mm', format: 'a4', orientation: isLandscape ? 'landscape' : 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
     };
-    
-    await html2pdf().set(opt).from(htmlStr).save();
+
+    try {
+      await html2pdf().set(opt).from(container).save();
+    } finally {
+      document.body.removeChild(container);
+    }
   }
 
   return { initTheme, setTheme, toggleTheme, toggleLang, initTopBar, showToast, setCurrency, getCurrencySymbol, formatCurrency, formatCurrencyNum, getCurrentMonth, formatMonth, formatMonthFull, formatDate, getPrevMonth, requireAuth, initSidebar, logout, confirm, cacheSet, cacheGet, cacheClear, getStatusLabel, getStatusClass, generateHTMLPDF };
