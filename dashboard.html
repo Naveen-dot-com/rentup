@@ -40,21 +40,25 @@
       </div>
       <!-- Chart Filters -->
       <div class="section-divider"><h2><i data-lucide="bar-chart-3"></i> <span data-i18n="dash_charts">Revenue Overview</span></h2></div>
-      <div class="filters-bar" style="margin-bottom:12px">
+      <div class="filters-bar" style="margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <select id="chart-year" class="form-control" style="width:110px"></select>
         <select id="chart-property" class="form-control"><option value="">All Properties</option></select>
         <select id="chart-room" class="form-control"><option value="">All Rooms</option></select>
+        <button class="btn btn-secondary btn-sm" id="btn-reset-charts" style="margin-left:auto"><i data-lucide="rotate-ccw"></i> <span data-i18n="dash_reset_charts">Reset All</span></button>
       </div>
       <div class="charts-grid">
-        <div class="chart-card glass-static"><h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)" data-i18n="dash_revenue_chart">Monthly Breakdown</h3><canvas id="chart-revenue"></canvas></div>
-        <div class="chart-card glass-static"><h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)">Rent Collection</h3><canvas id="chart-rent"></canvas></div>
+        <div class="chart-card glass-static"><h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)" data-i18n="dash_revenue_chart">Monthly Breakdown</h3><div class="chart-container" style="position:relative;height:calc(100% - 24px);width:100%"><canvas id="chart-revenue"></canvas></div></div>
+        <div class="chart-card glass-static"><h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)" data-i18n="chart_rent">Rent Collection</h3><div class="chart-container" style="position:relative;height:calc(100% - 24px);width:100%"><canvas id="chart-rent"></canvas></div></div>
       </div>
       <div class="charts-grid" style="margin-top:16px">
-        <div class="chart-card glass-static"><h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)">Electricity Consumption (Units)</h3><canvas id="chart-elec"></canvas></div>
-        <div class="chart-card glass-static"><h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)">Gas Consumption</h3><canvas id="chart-gas"></canvas></div>
+        <div class="chart-card glass-static"><h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)" data-i18n="chart_electricity">Electricity</h3><div class="chart-container" style="position:relative;height:calc(100% - 24px);width:100%"><canvas id="chart-elec"></canvas></div></div>
+        <div class="chart-card glass-static"><h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)" data-i18n="chart_gas">Gas Amount</h3><div class="chart-container" style="position:relative;height:calc(100% - 24px);width:100%"><canvas id="chart-gas"></canvas></div></div>
       </div>
       <!-- Recent Activity -->
-      <div class="section-divider" style="margin-top:28px"><h2><i data-lucide="clock"></i> <span data-i18n="dash_recent_bills">Recent Activity</span></h2></div>
+      <div class="section-divider" style="margin-top:28px;display:flex;align-items:center;justify-content:space-between">
+        <h2><i data-lucide="clock"></i> <span data-i18n="dash_recent_bills">Recent Activity</span></h2>
+        <input type="text" id="search-recent" class="form-control" placeholder="Search..." style="width:200px">
+      </div>
       <div class="glass-static" style="padding:16px">
         <div class="table-container">
           <table id="recent-table"><thead><tr>

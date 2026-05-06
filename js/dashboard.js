@@ -87,33 +87,40 @@ $(function () {
     if (charts.revenue) charts.revenue.destroy();
     charts.revenue = new Chart(document.getElementById('chart-revenue'), {
       type: 'bar', data: { labels, datasets: [
-        { label: t('chart_rent'), data: data.map(d => d.rent), backgroundColor: 'rgba(108,92,231,0.75)', borderRadius: 5 },
-        { label: t('chart_electricity'), data: data.map(d => d.electricity), backgroundColor: 'rgba(253,203,110,0.75)', borderRadius: 5 },
-        { label: t('chart_gas'), data: data.map(d => d.gas), backgroundColor: 'rgba(0,184,148,0.75)', borderRadius: 5 },
-      ] }, options: { ...commonOpts, scales: { ...commonOpts.scales, x: { ...commonOpts.scales.x, stacked: true }, y: { ...commonOpts.scales.y, stacked: true } } }
+        { label: t('chart_rent'), data: data.map(d => d.rent), backgroundColor: '#6c5ce7', borderRadius: 4 },
+        { label: t('chart_electricity'), data: data.map(d => d.electricity), backgroundColor: '#00cec9', borderRadius: 4 },
+        { label: t('chart_gas'), data: data.map(d => d.gas), backgroundColor: '#fdcb6e', borderRadius: 4 },
+      ] }, options: { ...commonOpts, plugins: { ...commonOpts.plugins, tooltip: { mode: 'index', intersect: false } }, scales: { ...commonOpts.scales, x: { ...commonOpts.scales.x, stacked: true }, y: { ...commonOpts.scales.y, stacked: true } } }
     });
 
-    // 2. Rent Collection Line
+    // 2. Rent Collection Line (Curved + Fill)
     if (charts.rent) charts.rent.destroy();
+    const ctxRent = document.getElementById('chart-rent').getContext('2d');
+    const gradRent = ctxRent.createLinearGradient(0, 0, 0, 400);
+    gradRent.addColorStop(0, 'rgba(108,92,231,0.5)'); gradRent.addColorStop(1, 'rgba(108,92,231,0.0)');
     charts.rent = new Chart(document.getElementById('chart-rent'), {
-      type: 'line', data: { labels, datasets: [{ label: t('chart_rent'), data: data.map(d => d.rent), borderColor: '#6c5ce7', backgroundColor: 'rgba(108,92,231,0.12)', tension: 0.4, fill: true, pointRadius: 5, pointBackgroundColor: '#6c5ce7' }] }, options: commonOpts
+      type: 'line', data: { labels, datasets: [{ label: t('chart_rent'), data: data.map(d => d.rent), borderColor: '#6c5ce7', backgroundColor: gradRent, borderWidth: 3, tension: 0.4, fill: true, pointRadius: 4, pointBackgroundColor: '#fff', pointBorderColor: '#6c5ce7', pointBorderWidth: 2 }] }, options: commonOpts
     });
 
-    // 3. Electricity Consumption
+    // 3. Electricity Consumption (Units)
     if (charts.elec) charts.elec.destroy();
     charts.elec = new Chart(document.getElementById('chart-elec'), {
-      type: 'bar', data: { labels, datasets: [{ label: 'Units', data: data.map(d => d.elec_units), backgroundColor: 'rgba(253,203,110,0.8)', borderRadius: 5 }] }, options: commonOpts
+      type: 'bar', data: { labels, datasets: [{ label: 'Units', data: data.map(d => d.elec_units), backgroundColor: '#00cec9', borderRadius: 4, barPercentage: 0.6 }] }, options: commonOpts
     });
 
-    // 4. Gas Consumption
+    // 4. Gas Collection (Amount)
     if (charts.gas) charts.gas.destroy();
     charts.gas = new Chart(document.getElementById('chart-gas'), {
-      type: 'bar', data: { labels, datasets: [{ label: 'Units', data: data.map(d => d.gas_units), backgroundColor: 'rgba(0,184,148,0.8)', borderRadius: 5 }] }, options: commonOpts
+      type: 'bar', data: { labels, datasets: [{ label: t('chart_gas'), data: data.map(d => d.gas), backgroundColor: '#fdcb6e', borderRadius: 4, barPercentage: 0.6 }] }, options: commonOpts
     });
   }
 
-  // Chart filter changes
+  // Chart filter changes & Reset
   $('#chart-year, #chart-property, #chart-room').on('change', renderCharts);
+  $('#btn-reset-charts').on('click', function() {
+    $('#chart-year').val(''); $('#chart-property').val(''); $('#chart-room').val('');
+    renderCharts();
+  });
 
   function renderRecentBills(bills) {
     const body = $('#recent-body');
@@ -125,7 +132,7 @@ $(function () {
     </tr>`).join(''));
   }
 
-  // Recent table sorting
+  // Recent table sorting & search
   let rSortCol = 'month', rSortDir = -1;
   $('#recent-table thead th[data-sort]').on('click', function () {
     const col = $(this).data('sort');
@@ -137,7 +144,15 @@ $(function () {
         return va < vb ? -1 * rSortDir : va > vb ? 1 * rSortDir : 0;
       });
       renderRecentBills(sorted);
+      $('#search-recent').trigger('input'); // re-apply search
     }
+  });
+
+  $('#search-recent').on('input', function() {
+    const q = $(this).val().toLowerCase();
+    $('#recent-body tr').each(function() {
+      $(this).toggle($(this).text().toLowerCase().includes(q));
+    });
   });
 
   // Dashboard PDF

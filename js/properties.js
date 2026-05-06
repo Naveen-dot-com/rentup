@@ -25,6 +25,14 @@ $(function () {
     }
   }
 
+  // Search properties
+  $('#search-properties').on('input', function() {
+    const q = $(this).val().toLowerCase();
+    $('#properties-grid .item-card').each(function() {
+      $(this).toggle($(this).text().toLowerCase().includes(q));
+    });
+  });
+
   function render(properties) {
     const grid = $('#properties-grid');
     if (!properties.length) {

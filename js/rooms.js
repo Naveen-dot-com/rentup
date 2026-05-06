@@ -60,6 +60,14 @@ $(function () {
     }
   }
 
+  // Search rooms
+  $('#search-rooms').on('input', function() {
+    const q = $(this).val().toLowerCase();
+    $('#rooms-grid .item-card').each(function() {
+      $(this).toggle($(this).text().toLowerCase().includes(q));
+    });
+  });
+
   function render(rooms) {
     const grid = $('#rooms-grid');
     if (!rooms.length) {

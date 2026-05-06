@@ -61,11 +61,13 @@ $(function () {
       <td class="amt-cell">${Utils.formatCurrency(b.rent_amount)}</td>
       <td>${b.electricity_units}</td>
       <td class="amt-cell">${Utils.formatCurrency(b.electricity_amount)}</td>
+      <td>${b.gas_units || 0}</td>
       <td class="amt-cell">${Utils.formatCurrency(b.gas_amount)}</td>
       <td class="amt-cell total-value">${Utils.formatCurrency(b.total_amount)}</td>
       <td><button class="badge ${Utils.getStatusClass(b.is_paid)} status-toggle" onclick="cycleStatus(${b.id})">${Utils.getStatusLabel(b.is_paid)}</button></td>
       <td style="white-space:nowrap">
         <button class="btn btn-icon btn-secondary btn-sm" onclick="editBill(${b.id})" title="${t('edit')}"><i data-lucide="pencil"></i></button>
+        <button class="btn btn-icon btn-danger btn-sm" onclick="deleteBill(${b.id})" title="${t('delete')}"><i data-lucide="trash-2"></i></button>
         <button class="btn btn-icon btn-secondary btn-sm" onclick="exportSinglePDF(${b.id})" title="PDF"><i data-lucide="file-text"></i></button>
         <button class="btn btn-icon btn-secondary btn-sm" onclick="exportSingleExcel(${b.id})" title="Excel"><i data-lucide="file-spreadsheet"></i></button>
       </td>
@@ -78,6 +80,15 @@ $(function () {
     const col = $(this).data('sort');
     if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = -1; }
     sortAndRender();
+  });
+
+  $('#search-billing').on('input', function() {
+    const q = $(this).val().toLowerCase();
+    $('#bills-body tr').each(function() {
+      if ($(this).find('td').length > 1) { // Skip empty state row
+        $(this).toggle($(this).text().toLowerCase().includes(q));
+      }
+    });
   });
 
   $('#bill-property').on('change', function () { const pid = $(this).val(); const rs = $('#bill-room'); rs.find('option:not(:first)').remove(); if (!pid) return; allRooms.filter(r => String(r.property_id) === String(pid)).forEach(r => rs.append(`<option value="${r.id}">${r.name}${r.tenant_name ? ' (' + r.tenant_name + ')' : ''}</option>`)); });
@@ -103,6 +114,11 @@ $(function () {
     try { if (id) { await API.updateBill(id, data); Utils.showToast(t('bill_updated'), 'success'); } else { await API.createBill(data); Utils.showToast(t('bill_created'), 'success'); } $('#bill-modal').removeClass('active'); loadBills(); } catch (err) { Utils.showToast(err.message, 'error'); }
   });
 
+  window.deleteBill = async function (id) {
+    if (!Utils.confirm(t('delete') + '?')) return;
+    try { await API.deleteBill(id); Utils.showToast(t('bill_status_updated'), 'success'); loadBills(); } catch (err) { Utils.showToast(err.message, 'error'); }
+  };
+
   window.cycleStatus = async function (id) { try { await API.togglePaid(id); Utils.showToast(t('bill_status_updated'), 'success'); loadBills(); } catch (e) { Utils.showToast(e.message, 'error'); } };
 
   // Single Bill PDF — uses embedded Noto font (Hindi + ₹)
@@ -123,7 +139,7 @@ $(function () {
     doc.text(t('pdf_rent_note', { currentMonth: curML }), 14, y); y += 8;
     doc.autoTable({ startY: y,
       head: [[t('pdf_item'), t('pdf_details'), t('pdf_amount')]],
-      body: [[t('pdf_rent'), t('pdf_rent_detail', { month: curML }), sym + ' ' + bill.rent_amount.toLocaleString()], [t('pdf_electricity'), t('pdf_elec_detail', { units: bill.electricity_units, rate: bill.electricity_rate, month: prevML }), sym + ' ' + bill.electricity_amount.toLocaleString()], [t('pdf_gas'), t('pdf_gas_detail', { units: bill.gas_units, month: prevML }), sym + ' ' + bill.gas_amount.toLocaleString()]],
+      body: [[t('pdf_rent'), t('pdf_rent_detail', { month: curML }), sym + ' ' + bill.rent_amount.toLocaleString()], [t('pdf_electricity'), t('pdf_elec_detail', { units: bill.electricity_units, rate: bill.electricity_rate, month: prevML }), sym + ' ' + bill.electricity_amount.toLocaleString()], [t('th_gas'), t('th_gas_units') + ': ' + (bill.gas_units||0), sym + ' ' + bill.gas_amount.toLocaleString()]],
       foot: [[t('pdf_total'), '', sym + ' ' + bill.total_amount.toLocaleString()]],
       theme: 'grid', headStyles: { fillColor: [108, 92, 231], textColor: 255, fontStyle: 'bold', fontSize: 10 }, footStyles: { fillColor: [240, 240, 250], textColor: [30, 30, 60], fontStyle: 'bold', fontSize: 11 }, styles: { fontSize: 9.5, cellPadding: 6, font: 'NotoSans' },
     });
@@ -135,7 +151,7 @@ $(function () {
   window.exportSingleExcel = function (id) {
     const b = currentBills.find(x => x.id === id); if (!b) return;
     const sym = Utils.getCurrencySymbol();
-    const data = [{ [t('th_tenant')]: b.tenant_name || '-', [t('th_room')]: b.room_name, [t('th_property')]: b.property_name, [t('th_month')]: Utils.formatMonth(b.month), [t('th_rent')]: sym + ' ' + b.rent_amount, [t('th_elec_units')]: b.electricity_units, [t('th_elec_amount')]: sym + ' ' + b.electricity_amount, [t('th_gas')]: sym + ' ' + b.gas_amount, [t('th_total')]: sym + ' ' + b.total_amount, [t('th_status')]: Utils.getStatusLabel(b.is_paid) }];
+    const data = [{ [t('th_tenant')]: b.tenant_name || '-', [t('th_room')]: b.room_name, [t('th_property')]: b.property_name, [t('th_month')]: Utils.formatMonth(b.month), [t('th_rent')]: sym + ' ' + b.rent_amount, [t('th_elec_units')]: b.electricity_units, [t('th_elec_amount')]: sym + ' ' + b.electricity_amount, [t('th_gas_units')]: b.gas_units || 0, [t('th_gas')]: sym + ' ' + b.gas_amount, [t('th_total')]: sym + ' ' + b.total_amount, [t('th_status')]: Utils.getStatusLabel(b.is_paid), 'Generated On': new Date().toLocaleString() }];
     const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, t('nav_billing'));
     XLSX.writeFile(wb, `RentUp_${b.tenant_name || b.room_name}_${b.month}.xlsx`);
   };
@@ -150,8 +166,8 @@ $(function () {
     const total = currentBills.reduce((s, b) => s + b.total_amount, 0);
     doc.setFontSize(10); doc.text(t('th_total') + ': ' + sym + ' ' + total.toLocaleString(), 14, 38);
     doc.autoTable({ startY: 44,
-      head: [[t('th_tenant'), t('th_room'), t('th_property'), t('th_rent'), t('th_elec_units'), t('th_elec_amount'), t('th_gas'), t('th_total'), t('th_status')]],
-      body: currentBills.map(b => [b.tenant_name || '-', b.room_name, b.property_name, sym+' '+b.rent_amount.toLocaleString(), b.electricity_units, sym+' '+b.electricity_amount.toLocaleString(), sym+' '+b.gas_amount.toLocaleString(), sym+' '+b.total_amount.toLocaleString(), Utils.getStatusLabel(b.is_paid)]),
+      head: [[t('th_tenant'), t('th_room'), t('th_property'), t('th_rent'), t('th_elec_units'), t('th_elec_amount'), t('th_gas_units'), t('th_gas'), t('th_total')]],
+      body: currentBills.map(b => [b.tenant_name || '-', b.room_name, b.property_name, sym+' '+b.rent_amount.toLocaleString(), b.electricity_units, sym+' '+b.electricity_amount.toLocaleString(), b.gas_units||0, sym+' '+b.gas_amount.toLocaleString(), sym+' '+b.total_amount.toLocaleString()]),
       theme: 'grid', headStyles: { fillColor: [108, 92, 231], textColor: 255, fontSize: 8 }, styles: { fontSize: 8, cellPadding: 4, font: 'NotoSans' },
     });
     doc.save('RentUp_All_Bills.pdf'); Utils.showToast(t('bill_pdf_downloaded'), 'success');
@@ -161,7 +177,7 @@ $(function () {
   $('#btn-export-all-excel').on('click', function () {
     if (!currentBills.length) { Utils.showToast(t('bill_no_bills_export'), 'error'); return; }
     const sym = Utils.getCurrencySymbol();
-    const data = currentBills.map(b => ({ [t('th_tenant')]: b.tenant_name || '-', [t('th_room')]: b.room_name, [t('th_property')]: b.property_name, [t('th_month')]: Utils.formatMonth(b.month), [t('th_rent')]: sym+' '+b.rent_amount, [t('th_elec_units')]: b.electricity_units, [t('th_elec_amount')]: sym+' '+b.electricity_amount, [t('th_gas')]: sym+' '+b.gas_amount, [t('th_total')]: sym+' '+b.total_amount, [t('th_status')]: Utils.getStatusLabel(b.is_paid) }));
+    const data = currentBills.map(b => ({ [t('th_tenant')]: b.tenant_name || '-', [t('th_room')]: b.room_name, [t('th_property')]: b.property_name, [t('th_month')]: Utils.formatMonth(b.month), [t('th_rent')]: sym+' '+b.rent_amount, [t('th_elec_units')]: b.electricity_units, [t('th_elec_amount')]: sym+' '+b.electricity_amount, [t('th_gas_units')]: b.gas_units||0, [t('th_gas')]: sym+' '+b.gas_amount, [t('th_total')]: sym+' '+b.total_amount, [t('th_status')]: Utils.getStatusLabel(b.is_paid), 'Generated On': new Date().toLocaleString() }));
     const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, t('nav_billing'));
     XLSX.writeFile(wb, 'RentUp_All_Bills.xlsx'); Utils.showToast(t('bill_excel_downloaded'), 'success');
   });
