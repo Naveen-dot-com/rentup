@@ -130,7 +130,7 @@ $(function () {
     const curML = Utils.formatMonth(bill.month);
     
     const html = `
-      <div style="font-family: sans-serif; padding: 20px; color: #333; width: 800px; max-width: 100%;">
+      <div id="pdf-export-wrap" style="font-family: sans-serif; padding: 20px; color: #333; width: 800px; background: #fff;">
         <h1 style="color: #6c5ce7; margin: 0 0 10px 0; font-size: 28px;">RentUp</h1>
         <h3 style="color: #555; margin: 0 0 20px 0; font-size: 18px;">${t('pdf_title')}</h3>
         <table style="width: 100%; margin-bottom: 25px; font-size: 14px; border-collapse: collapse;">
@@ -191,7 +191,9 @@ $(function () {
     const b = currentBills.find(x => x.id === id); if (!b) return;
     const sym = Utils.getCurrencySymbol();
     const data = [{ [t('th_tenant')]: b.tenant_name || '-', [t('th_room')]: b.room_name, [t('th_property')]: b.property_name, [t('th_month')]: Utils.formatMonth(b.month), [t('th_rent')]: sym + ' ' + b.rent_amount, [t('th_elec_units')]: b.electricity_units, [t('th_elec_amount')]: sym + ' ' + b.electricity_amount, [t('th_gas_units')]: b.gas_units || 0, [t('th_gas')]: sym + ' ' + b.gas_amount, [t('th_total')]: sym + ' ' + b.total_amount, [t('th_status')]: Utils.getStatusLabel(b.is_paid), 'Generated On': new Date().toLocaleString() }];
-    const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, t('nav_billing'));
+    const ws = XLSX.utils.json_to_sheet(data); 
+    ws['!cols'] = [{wch: 20}, {wch: 15}, {wch: 25}, {wch: 12}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 12}, {wch: 20}];
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, t('nav_billing'));
     XLSX.writeFile(wb, `RentUp_${b.tenant_name || b.room_name}_${b.month}.xlsx`);
   };
 
@@ -219,7 +221,7 @@ $(function () {
     });
 
     const html = `
-      <div style="font-family: sans-serif; padding: 20px; color: #333; width: 1000px; max-width: 100%;">
+      <div id="pdf-export-wrap" style="font-family: sans-serif; padding: 20px; color: #333; width: 1000px; background: #fff;">
         <h1 style="color: #6c5ce7; margin: 0 0 10px 0; font-size: 24px;">RentUp</h1>
         <h3 style="color: #555; margin: 0 0 10px 0; font-size: 16px;">${t('bill_consolidated_title')}</h3>
         <p style="margin: 0 0 20px 0; font-size: 14px;"><strong>${t('th_total')}:</strong> ${sym} ${total.toLocaleString()}</p>
@@ -254,8 +256,10 @@ $(function () {
   $('#btn-export-all-excel').on('click', function () {
     if (!currentBills.length) { Utils.showToast(t('bill_no_bills_export'), 'error'); return; }
     const sym = Utils.getCurrencySymbol();
-    const data = currentBills.map(b => ({ [t('th_tenant')]: b.tenant_name || '-', [t('th_room')]: b.room_name, [t('th_property')]: b.property_name, [t('th_month')]: Utils.formatMonth(b.month), [t('th_rent')]: sym+' '+b.rent_amount, [t('th_elec_units')]: b.electricity_units, [t('th_elec_amount')]: sym+' '+b.electricity_amount, [t('th_gas_units')]: b.gas_units||0, [t('th_gas')]: sym+' '+b.gas_amount, [t('th_total')]: sym+' '+b.total_amount, [t('th_status')]: Utils.getStatusLabel(b.is_paid), 'Generated On': new Date().toLocaleString() }));
-    const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, t('nav_billing'));
+    const data = currentBills.map(b => ({ [t('th_tenant')]: b.tenant_name || '-', [t('th_room')]: b.room_name, [t('th_property')]: b.property_name, [t('th_month')]: Utils.formatMonth(b.month), [t('th_rent')]: sym + ' ' + b.rent_amount, [t('th_elec_units')]: b.electricity_units, [t('th_elec_amount')]: sym + ' ' + b.electricity_amount, [t('th_gas_units')]: b.gas_units || 0, [t('th_gas')]: sym + ' ' + b.gas_amount, [t('th_total')]: sym + ' ' + b.total_amount, [t('th_status')]: Utils.getStatusLabel(b.is_paid) }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    ws['!cols'] = [{wch: 20}, {wch: 15}, {wch: 25}, {wch: 12}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 12}];
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, t('nav_billing'));
     XLSX.writeFile(wb, 'RentUp_All_Bills.xlsx'); Utils.showToast(t('bill_excel_downloaded'), 'success');
   });
 

@@ -190,7 +190,7 @@ $(function () {
     }
 
     const html = `
-      <div style="font-family: sans-serif; padding: 20px; color: #333; width: 800px; max-width: 100%;">
+      <div id="pdf-export-wrap" style="font-family: sans-serif; padding: 20px; color: #333; width: 800px; background: #fff;">
         <h1 style="color: #6c5ce7; margin: 0 0 5px 0; font-size: 28px;">RentUp</h1>
         <h3 style="color: #555; margin: 0 0 20px 0; font-size: 16px;">${t('dash_title')} — ${Utils.formatMonthFull(dashData.current_month)}</h3>
         
