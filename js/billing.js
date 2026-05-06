@@ -156,7 +156,15 @@ $(function () {
     const curML = Utils.formatMonth(bill.month);
     
     const html = `
-      <div id="pdf-export-wrap" style="font-family: sans-serif; padding: 20px; color: #333; width: 700px; background: #fff;">
+      <style>
+        #pdf-export-wrap table { display: table !important; width: 100% !important; border-collapse: collapse !important; }
+        #pdf-export-wrap tr { display: table-row !important; }
+        #pdf-export-wrap td, #pdf-export-wrap th { display: table-cell !important; padding: 8px !important; line-height: 1.4 !important; }
+        #pdf-export-wrap thead { display: table-header-group !important; }
+        #pdf-export-wrap tbody { display: table-row-group !important; }
+        #pdf-export-wrap td::before { display: none !important; }
+      </style>
+      <div id="pdf-export-wrap" style="font-family: sans-serif; padding: 30px; color: #333; width: 700px; background: #fff;">
         <h1 style="color: #6c5ce7; margin: 0 0 10px 0; font-size: 28px;">RentUp</h1>
         <h3 style="color: #555; margin: 0 0 20px 0; font-size: 18px;">${t('pdf_title')}</h3>
         <table style="width: 100%; margin-bottom: 25px; font-size: 14px; border-collapse: collapse;">
@@ -247,6 +255,14 @@ $(function () {
     });
 
     const html = `
+      <style>
+        #pdf-export-wrap table { display: table !important; width: 100% !important; border-collapse: collapse !important; }
+        #pdf-export-wrap tr { display: table-row !important; }
+        #pdf-export-wrap td, #pdf-export-wrap th { display: table-cell !important; padding: 6px !important; font-size: 11px !important; }
+        #pdf-export-wrap thead { display: table-header-group !important; }
+        #pdf-export-wrap tbody { display: table-row-group !important; }
+        #pdf-export-wrap td::before { display: none !important; }
+      </style>
       <div id="pdf-export-wrap" style="font-family: sans-serif; padding: 20px; color: #333; width: 1040px; background: #fff;">
         <h1 style="color: #6c5ce7; margin: 0 0 10px 0; font-size: 24px;">RentUp</h1>
         <h3 style="color: #555; margin: 0 0 10px 0; font-size: 16px;">${t('bill_consolidated_title')}</h3>

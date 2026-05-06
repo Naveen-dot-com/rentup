@@ -190,7 +190,15 @@ $(function () {
     }
 
     const html = `
-      <div id="pdf-export-wrap" style="font-family: sans-serif; padding: 20px; color: #333; width: 700px; background: #fff;">
+      <style>
+        #pdf-export-wrap table { display: table !important; width: 100% !important; border-collapse: collapse !important; }
+        #pdf-export-wrap tr { display: table-row !important; }
+        #pdf-export-wrap td, #pdf-export-wrap th { display: table-cell !important; padding: 8px !important; }
+        #pdf-export-wrap thead { display: table-header-group !important; }
+        #pdf-export-wrap tbody { display: table-row-group !important; }
+        #pdf-export-wrap td::before { display: none !important; }
+      </style>
+      <div id="pdf-export-wrap" style="font-family: sans-serif; padding: 30px; color: #333; width: 700px; background: #fff;">
         <h1 style="color: #6c5ce7; margin: 0 0 5px 0; font-size: 28px;">RentUp</h1>
         <h3 style="color: #555; margin: 0 0 20px 0; font-size: 16px;">${t('dash_title')} — ${Utils.formatMonthFull(dashData.current_month)}</h3>
         
