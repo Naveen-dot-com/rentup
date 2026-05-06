@@ -285,6 +285,15 @@ textarea.form-control{resize:vertical;min-height:80px}
   .btn{padding:10px 14px;font-size:0.82rem}
 }
 
+/* Charts */
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}
+.chart-card{padding:20px;height:280px}
+@media(max-width:768px){.charts-grid{grid-template-columns:1fr}.chart-card{height:220px}}
+
+/* Status Toggle Button */
+.status-toggle{cursor:pointer;border:none;font-family:var(--font-body);transition:var(--transition)}
+.status-toggle:hover{filter:brightness(1.15);transform:scale(1.05)}
+
 /* iOS safe area */
 @supports(padding-bottom:env(safe-area-inset-bottom)){
   .sidebar{padding-bottom:calc(20px + env(safe-area-inset-bottom))}

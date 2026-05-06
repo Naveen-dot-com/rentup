@@ -57,6 +57,7 @@ const API = (() => {
     createBill: (body) => request('POST', '/api/bills', body),
     updateBill: (id, body) => request('PUT', '/api/bills/' + id, body),
     togglePaid: (id) => request('PUT', '/api/bills/' + id + '/paid'),
+    deleteBill: (id) => request('DELETE', '/api/bills/' + id),
 
     // Dashboard
     getDashboard: (month) => request('GET', '/api/dashboard' + (month ? '?month=' + month : '')),

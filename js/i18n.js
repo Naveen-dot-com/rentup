@@ -13,6 +13,7 @@ const I18N = {
     nav_dashboard: 'Dashboard',
     nav_properties: 'Properties',
     nav_rooms: 'Rooms',
+    nav_billing: 'Billing',
     nav_settings: 'Settings',
     nav_signout: 'Sign Out',
 
@@ -85,7 +86,7 @@ const I18N = {
     room_property: 'Property',
     room_name: 'Room Name / Number',
     room_name_ph: 'e.g. Room 101',
-    room_rent: 'Default Monthly Rent',
+    room_rent: 'Monthly Rent',
     room_rent_ph: 'e.g. 15000',
     room_tenant: 'Tenant Name',
     room_tenant_ph: 'e.g. Rajesh Kumar',
@@ -107,8 +108,11 @@ const I18N = {
     bill_edit_title: 'Edit Bill',
     bill_export_excel: 'Export Excel',
     bill_month: 'Month',
-    bill_rent_override: 'Rent Amount (override)',
-    bill_rent_override_ph: 'Leave empty for default',
+    bill_rent_override: 'Rent Amount',
+    bill_rent_override_ph: 'Leave empty for room default',
+    bill_export_all_pdf: 'Export All PDF',
+    bill_export_all_excel: 'Export All Excel',
+    bill_consolidated_title: 'Consolidated Monthly Bill',
     bill_elec_units: 'Electricity Units',
     bill_gas_units: 'Gas Units',
     bill_gas_amount: 'Gas Amount',
@@ -128,6 +132,7 @@ const I18N = {
     // Status
     status_paid: 'Paid',
     status_unpaid: 'Unpaid',
+    status_partial: 'Partial',
 
     // Settings
     settings_title: 'Settings',
@@ -165,6 +170,14 @@ const I18N = {
     pdf_elec_gas_note: 'Electricity & Gas charges are for {prevMonth}',
     pdf_rent_note: 'Rent is for {currentMonth}',
 
+    // Dashboard charts
+    dash_charts: 'Revenue Overview',
+    dash_revenue_chart: 'Monthly Breakdown',
+    chart_rent: 'Rent',
+    chart_electricity: 'Electricity',
+    chart_gas: 'Gas',
+    dash_download_pdf: 'Download Report',
+
     // Common
     cancel: 'Cancel',
     save: 'Save',
@@ -184,6 +197,7 @@ const I18N = {
     nav_dashboard: 'डैशबोर्ड',
     nav_properties: 'संपत्तियाँ',
     nav_rooms: 'कमरे',
+    nav_billing: 'बिलिंग',
     nav_settings: 'सेटिंग्स',
     nav_signout: 'साइन आउट',
 
@@ -256,7 +270,7 @@ const I18N = {
     room_property: 'संपत्ति',
     room_name: 'कमरे का नाम / नंबर',
     room_name_ph: 'उदा. कमरा 101',
-    room_rent: 'डिफ़ॉल्ट मासिक किराया',
+    room_rent: 'मासिक किराया',
     room_rent_ph: 'उदा. 15000',
     room_tenant: 'किरायेदार का नाम',
     room_tenant_ph: 'उदा. राजेश कुमार',
@@ -278,8 +292,11 @@ const I18N = {
     bill_edit_title: 'बिल संपादित करें',
     bill_export_excel: 'एक्सेल निर्यात',
     bill_month: 'महीना',
-    bill_rent_override: 'किराया राशि (ओवरराइड)',
-    bill_rent_override_ph: 'डिफ़ॉल्ट के लिए खाली छोड़ें',
+    bill_rent_override: 'किराया राशि',
+    bill_rent_override_ph: 'कमरे का डिफ़ॉल्ट किराया',
+    bill_export_all_pdf: 'सभी PDF निर्यात',
+    bill_export_all_excel: 'सभी एक्सेल निर्यात',
+    bill_consolidated_title: 'समेकित मासिक बिल',
     bill_elec_units: 'बिजली यूनिट',
     bill_gas_units: 'गैस यूनिट',
     bill_gas_amount: 'गैस राशि',
@@ -299,6 +316,7 @@ const I18N = {
     // Status
     status_paid: 'भुगतान हुआ',
     status_unpaid: 'बकाया',
+    status_partial: 'आंशिक',
 
     // Settings
     settings_title: 'सेटिंग्स',
@@ -335,6 +353,14 @@ const I18N = {
     pdf_notes: 'नोट्स',
     pdf_elec_gas_note: 'बिजली और गैस शुल्क {prevMonth} के लिए हैं',
     pdf_rent_note: 'किराया {currentMonth} के लिए है',
+
+    // Dashboard charts
+    dash_charts: 'आय अवलोकन',
+    dash_revenue_chart: 'मासिक विवरण',
+    chart_rent: 'किराया',
+    chart_electricity: 'बिजली',
+    chart_gas: 'गैस',
+    dash_download_pdf: 'रिपोर्ट डाउनलोड',
 
     // Common
     cancel: 'रद्द करें',

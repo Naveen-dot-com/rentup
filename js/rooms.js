@@ -80,9 +80,12 @@ $(function () {
           </div>
         </div>
         <div class="card-body">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;border-radius:8px;background:${r.tenant_name ? 'var(--success-bg)' : 'var(--warning-bg)'}">
+            <i data-lucide="user" style="width:16px;height:16px;color:${r.tenant_name ? 'var(--success)' : 'var(--warning)'}"></i>
+            <span style="font-weight:600;font-size:0.9rem;color:${r.tenant_name ? 'var(--success)' : 'var(--warning)'}">${r.tenant_name || t('room_no_tenant')}</span>
+          </div>
           <div class="card-meta">
             <span class="badge badge-accent">${Utils.formatCurrency(r.default_rent)} ${t('room_per_month')}</span>
-            <span class="badge ${r.tenant_name ? 'badge-success' : 'badge-warning'}"><i data-lucide="user" style="width:12px;height:12px;margin-right:4px"></i> ${r.tenant_name || t('room_no_tenant')}</span>
           </div>
         </div>
       </div>
