@@ -1,5 +1,5 @@
 // ============================================================
-// RentUp v6P — Shared Utilities
+// RentUp v7 P — Shared Utilities
 // ============================================================
 const CURRENCY_SYMBOLS = { INR: '₹', PKR: '₨', USD: '$', EUR: '€', GBP: '£' };
 const Utils = (() => {
@@ -31,55 +31,86 @@ const Utils = (() => {
   function getStatusClass(isPaid) { return isPaid === 1 ? 'badge-success' : isPaid === 2 ? 'badge-warning' : 'badge-danger'; }
 
   // ============================================================
-  // generateHTMLPDF — Fixed v2
+  // generateHTMLPDF — Fixed v3
   //
-  // Root causes of blank PDF:
-  // 1. position:fixed at top:-99999px → html2canvas captures 0-height on mobile
-  //    because getBoundingClientRect() returns a rect outside the viewport clip.
-  // 2. Passing raw HTML string to .from() gives html2pdf no control over
-  //    element sizing, so responsive CSS collapses tables.
+  // All three bugs fixed:
+  // v1 bug: raw htmlStr → mobile CSS collapses tables
+  // v2 bug: position:fixed top:-99999px → 0-height capture → blank PDF
+  // v3 bug: position:absolute top:0 + scrollY:-window.scrollY → crops top
+  //         of element when user has scrolled down the page
   //
-  // Fix: use a VISIBLE wrapper (opacity:0, pointer-events:none, overflow:hidden)
-  // placed at the TOP of the document in normal flow. html2canvas can measure
-  // its real height, then we clean up after saving.
+  // Final approach:
+  // - Render into a brand-new detached iframe with a fixed viewport size.
+  //   The iframe is completely isolated from the parent page's CSS, scroll
+  //   position, and responsive breakpoints. html2canvas then captures the
+  //   iframe's body which always starts at (0,0) with full height.
   // ============================================================
   async function generateHTMLPDF(htmlStr, filename, isLandscape = false) {
-    const pxWidth = isLandscape ? 1123 : 794;
+    const pxWidth  = isLandscape ? 1123 : 794;
+    const pxHeight = isLandscape ? 794  : 1123;
 
-    // Outer shell: in normal flow so html2canvas can measure real height,
-    // but visually hidden so the user never sees it flash on screen.
-    const shell = document.createElement('div');
-    shell.style.cssText =
-      'position:absolute;' +
-      'top:0;left:0;' +
+    // 1. Create an invisible iframe — isolated from all parent CSS and scroll
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText =
+      'position:fixed;top:0;left:0;' +
       'width:' + pxWidth + 'px;' +
-      'opacity:0;' +
-      'pointer-events:none;' +
-      'z-index:-9999;' +
-      'background:#fff;' +
-      'box-sizing:border-box;';
-    shell.innerHTML = htmlStr;
-    document.body.appendChild(shell);
+      'height:' + pxHeight + 'px;' +
+      'opacity:0;pointer-events:none;border:none;' +
+      'z-index:-9999;';
+    document.body.appendChild(iframe);
 
-    // Wait two frames: first for DOM insert, second for layout/fonts to settle
+    // 2. Write a clean standalone HTML page into the iframe
+    //    — no parent stylesheets, no responsive CSS, no sidebar, nothing
+    const iDoc = iframe.contentDocument || iframe.contentWindow.document;
+    iDoc.open();
+    iDoc.write(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #fff;
+    color: #333;
+    width: ${pxWidth}px;
+    min-height: 100%;
+  }
+  table { display: table !important; width: 100% !important; border-collapse: collapse !important; }
+  thead { display: table-header-group !important; }
+  tbody { display: table-row-group !important; }
+  tfoot { display: table-footer-group !important; }
+  tr    { display: table-row !important; }
+  td, th { display: table-cell !important; }
+  td::before { display: none !important; }
+</style>
+</head>
+<body>${htmlStr}</body>
+</html>`);
+    iDoc.close();
+
+    // 3. Wait for iframe to fully render (fonts, layout)
+    await new Promise(r => {
+      if (iframe.contentDocument.readyState === 'complete') { setTimeout(r, 100); }
+      else { iframe.onload = () => setTimeout(r, 100); }
+    });
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-    // Grab the actual inner content element (the #pdf-export-wrap div)
-    // so html2canvas captures exactly that, not the full shell.
-    const inner = shell.querySelector('#pdf-export-wrap') || shell;
+    // 4. Capture the iframe's body element — always at (0,0), no scroll offset issues
+    const target = iDoc.getElementById('pdf-export-wrap') || iDoc.body;
 
     const opt = {
-      margin:   [8, 8, 8, 8],          // mm: top, left, bottom, right
+      margin:   [8, 8, 8, 8],
       filename: filename,
       image:    { type: 'jpeg', quality: 0.98 },
       html2canvas: {
-        scale:           2,             // retina-quality output
+        scale:           2,
         useCORS:         true,
         letterRendering: true,
-        width:           pxWidth,       // capture exactly this many CSS px wide
-        windowWidth:     pxWidth,       // prevents ALL mobile breakpoints firing
+        width:           pxWidth,
+        windowWidth:     pxWidth,
         scrollX:         0,
-        scrollY:         -window.scrollY, // compensate for any page scroll
+        scrollY:         0,
         backgroundColor: '#ffffff',
         logging:         false,
       },
@@ -92,9 +123,9 @@ const Utils = (() => {
     };
 
     try {
-      await html2pdf().set(opt).from(inner).save();
+      await html2pdf().set(opt).from(target).save();
     } finally {
-      document.body.removeChild(shell);
+      document.body.removeChild(iframe);
     }
   }
 
