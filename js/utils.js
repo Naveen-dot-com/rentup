@@ -31,21 +31,26 @@ const Utils = (() => {
   function getStatusClass(isPaid) { return isPaid === 1 ? 'badge-success' : isPaid === 2 ? 'badge-warning' : 'badge-danger'; }
 
   // Generate PDF from HTML string using html2pdf
-  async function generateHTMLPDF(htmlStr, filename) {
-    const temp = document.createElement('div');
-    temp.innerHTML = htmlStr;
-    document.body.appendChild(temp);
+  // Generate PDF from HTML string using html2pdf
+  async function generateHTMLPDF(htmlStr, filename, isLandscape = false) {
+    const widthMatch = htmlStr.match(/width:\s*(\d+)px/);
+    const width = widthMatch ? parseInt(widthMatch[1]) : (isLandscape ? 1040 : 700);
     
     const opt = {
       margin: 10,
       filename: filename,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      html2canvas: { 
+        scale: 2, 
+        useCORS: true, 
+        letterRendering: true,
+        width: width,
+        windowWidth: width + 50
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: isLandscape ? 'landscape' : 'portrait' }
     };
     
-    await html2pdf().set(opt).from(temp).save();
-    document.body.removeChild(temp);
+    await html2pdf().set(opt).from(htmlStr).save();
   }
 
   return { initTheme, setTheme, toggleTheme, toggleLang, initTopBar, showToast, setCurrency, getCurrencySymbol, formatCurrency, formatCurrencyNum, getCurrentMonth, formatMonth, formatMonthFull, formatDate, getPrevMonth, requireAuth, initSidebar, logout, confirm, cacheSet, cacheGet, cacheClear, getStatusLabel, getStatusClass, generateHTMLPDF };
