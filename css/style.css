@@ -128,7 +128,7 @@ body{font-family:var(--font-body);background:var(--bg-primary);color:var(--text-
 .hamburger.active span:nth-child(1){transform:rotate(45deg) translate(2px, -1px)}
 .hamburger.active span:nth-child(2){opacity:0;transform:translateX(10px)}
 .hamburger.active span:nth-child(3){transform:rotate(-45deg) translate(2px, 1px)}
-.sidebar-overlay{display:none;position:fixed;inset:0;background:var(--overlay);z-index:90}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:transparent;z-index:90}
 
 /* Main Content */
 .main-content{flex:1;margin-left:var(--sidebar-width);padding:28px 32px;min-height:100vh;position:relative;transition:margin-left 0.3s cubic-bezier(0.4,0,0.2,1)}
