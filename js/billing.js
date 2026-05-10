@@ -154,7 +154,7 @@ $(function () {
     Utils.showToast(t('loading') || 'Generating PDF...', 'info');
     try {
       const { jsPDF } = window.jspdf;
-      const sym = Utils.getCurrencySymbol();
+      const sym = Utils.pdfSym();
       const prevML = Utils.formatMonth(Utils.getPrevMonth(bill.month));
       const curML  = Utils.formatMonth(bill.month);
       const doc    = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
