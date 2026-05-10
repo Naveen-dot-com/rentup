@@ -162,81 +162,96 @@ $(function () {
   $('#btn-dash-pdf').on('click', async function () {
     if (!dashData) return;
     const sym = Utils.getCurrencySymbol();
-    
+
+    // Capture charts as base64 images BEFORE generating PDF
     let imagesHtml = '';
     try {
       ['chart-revenue', 'chart-rent', 'chart-elec', 'chart-gas'].forEach((id) => {
         const c = document.getElementById(id);
         if (c) {
-          imagesHtml += `<img src="${c.toDataURL('image/png')}" style="width: 48%; display: inline-block; margin: 1%; border-radius: 8px; border: 1px solid #eee;">`;
+          imagesHtml += `<img src="${c.toDataURL('image/png')}" style="width:48%;display:inline-block;margin:1%;border-radius:8px;border:1px solid #eee;">`;
         }
       });
-    } catch {}
+    } catch (e) {
+      console.warn('Chart image capture failed:', e);
+    }
 
     let rowsHtml = '';
     if (dashData.recent_bills && dashData.recent_bills.length) {
       dashData.recent_bills.forEach(b => {
         rowsHtml += `
           <tr>
-            <td style="padding: 8px; border: 1px solid #ddd;">${b.tenant_name || '-'}</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">${b.room_name}</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">${b.property_name}</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">${Utils.formatMonth(b.month)}</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">${sym} ${Utils.formatCurrencyNum(b.total_amount)}</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">${Utils.getStatusLabel(b.is_paid)}</td>
-          </tr>
-        `;
+            <td style="padding:8px;border:1px solid #ddd;">${b.tenant_name || '-'}</td>
+            <td style="padding:8px;border:1px solid #ddd;">${b.room_name}</td>
+            <td style="padding:8px;border:1px solid #ddd;">${b.property_name}</td>
+            <td style="padding:8px;border:1px solid #ddd;">${Utils.formatMonth(b.month)}</td>
+            <td style="padding:8px;border:1px solid #ddd;">${sym} ${Utils.formatCurrencyNum(b.total_amount)}</td>
+            <td style="padding:8px;border:1px solid #ddd;">${Utils.getStatusLabel(b.is_paid)}</td>
+          </tr>`;
       });
     }
 
     const html = `
       <style>
-        #pdf-export-wrap table { display: table !important; width: 100% !important; border-collapse: collapse !important; }
-        #pdf-export-wrap tr { display: table-row !important; }
-        #pdf-export-wrap td, #pdf-export-wrap th { display: table-cell !important; padding: 8px !important; }
-        #pdf-export-wrap thead { display: table-header-group !important; }
-        #pdf-export-wrap tbody { display: table-row-group !important; }
-        #pdf-export-wrap td::before { display: none !important; }
+        #pdf-export-wrap table { display:table !important; width:100% !important; border-collapse:collapse !important; }
+        #pdf-export-wrap tr    { display:table-row !important; }
+        #pdf-export-wrap td, #pdf-export-wrap th { display:table-cell !important; padding:8px !important; }
+        #pdf-export-wrap thead { display:table-header-group !important; }
+        #pdf-export-wrap tbody { display:table-row-group !important; }
+        #pdf-export-wrap td::before { display:none !important; }
       </style>
-      <div id="pdf-export-wrap" style="font-family: sans-serif; padding: 30px; color: #333; width: 700px; background: #fff;">
-        <h1 style="color: #6c5ce7; margin: 0 0 5px 0; font-size: 28px;">RentUp</h1>
-        <h3 style="color: #555; margin: 0 0 20px 0; font-size: 16px;">${t('dash_title')} — ${Utils.formatMonthFull(dashData.current_month)}</h3>
-        
-        <table style="width: 100%; margin-bottom: 25px; font-size: 14px; border-collapse: collapse;">
-          <tr><td style="padding: 6px 0; width: 40%;"><strong>${t('dash_properties')}:</strong></td><td style="padding: 6px 0;">${dashData.total_properties}</td></tr>
-          <tr><td style="padding: 6px 0;"><strong>${t('dash_rooms')}:</strong></td><td style="padding: 6px 0;">${dashData.total_rooms}</td></tr>
-          <tr><td style="padding: 6px 0;"><strong>${t('dash_monthly_revenue')}:</strong></td><td style="padding: 6px 0;">${sym} ${Utils.formatCurrencyNum(dashData.monthly_revenue)}</td></tr>
-          <tr><td style="padding: 6px 0;"><strong>${t('dash_unpaid_bills')}:</strong></td><td style="padding: 6px 0;">${dashData.unpaid_count}</td></tr>
+      <div id="pdf-export-wrap" style="font-family:Arial,sans-serif;padding:30px;color:#333;width:700px;background:#fff;">
+        <h1 style="color:#6c5ce7;margin:0 0 5px 0;font-size:28px;">RentUp</h1>
+        <h3 style="color:#555;margin:0 0 20px 0;font-size:16px;">${t('dash_title')} — ${Utils.formatMonthFull(dashData.current_month)}</h3>
+
+        <table style="width:100%;margin-bottom:25px;font-size:14px;border-collapse:collapse;">
+          <tr>
+            <td style="padding:6px 0;width:40%;border-bottom:1px solid #eee;"><strong>${t('dash_properties')}:</strong></td>
+            <td style="padding:6px 0;border-bottom:1px solid #eee;">${dashData.total_properties}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;border-bottom:1px solid #eee;"><strong>${t('dash_rooms')}:</strong></td>
+            <td style="padding:6px 0;border-bottom:1px solid #eee;">${dashData.total_rooms}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;border-bottom:1px solid #eee;"><strong>${t('dash_monthly_revenue')}:</strong></td>
+            <td style="padding:6px 0;border-bottom:1px solid #eee;">${sym} ${Utils.formatCurrencyNum(dashData.monthly_revenue)}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;"><strong>${t('dash_unpaid_bills')}:</strong></td>
+            <td style="padding:6px 0;">${dashData.unpaid_count}</td>
+          </tr>
         </table>
-        
-        <div style="margin-bottom: 20px;">
+
+        <div style="margin-bottom:20px;font-size:0;">
           ${imagesHtml}
         </div>
-        
+
         ${rowsHtml ? `
-        <h4 style="color: #444; margin-bottom: 10px;">${t('dash_recent_bills')}</h4>
-        <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+        <h4 style="color:#444;margin:0 0 10px 0;">${t('dash_recent_bills')}</h4>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;text-align:left;">
           <thead>
-            <tr style="background: #6c5ce7; color: #fff;">
-              <th style="padding: 8px; border: 1px solid #ddd;">${t('th_tenant')}</th>
-              <th style="padding: 8px; border: 1px solid #ddd;">${t('th_room')}</th>
-              <th style="padding: 8px; border: 1px solid #ddd;">${t('th_property')}</th>
-              <th style="padding: 8px; border: 1px solid #ddd;">${t('th_month')}</th>
-              <th style="padding: 8px; border: 1px solid #ddd;">${t('th_total')}</th>
-              <th style="padding: 8px; border: 1px solid #ddd;">${t('th_status')}</th>
+            <tr style="background:#6c5ce7;color:#fff;">
+              <th style="padding:8px;border:1px solid #5a4ec9;">${t('th_tenant')}</th>
+              <th style="padding:8px;border:1px solid #5a4ec9;">${t('th_room')}</th>
+              <th style="padding:8px;border:1px solid #5a4ec9;">${t('th_property')}</th>
+              <th style="padding:8px;border:1px solid #5a4ec9;">${t('th_month')}</th>
+              <th style="padding:8px;border:1px solid #5a4ec9;">${t('th_total')}</th>
+              <th style="padding:8px;border:1px solid #5a4ec9;">${t('th_status')}</th>
             </tr>
           </thead>
-          <tbody>
-            ${rowsHtml}
-          </tbody>
-        </table>
-        ` : ''}
-      </div>
-    `;
+          <tbody>${rowsHtml}</tbody>
+        </table>` : ''}
+      </div>`;
 
     Utils.showToast(t('loading') || 'Generating PDF...', 'info');
-    await Utils.generateHTMLPDF(html, 'RentUp_Dashboard_' + dashData.current_month + '.pdf');
-    Utils.showToast(t('bill_pdf_downloaded'), 'success');
+    try {
+      await Utils.generateHTMLPDF(html, 'RentUp_Dashboard_' + dashData.current_month + '.pdf');
+      Utils.showToast(t('bill_pdf_downloaded') || 'PDF downloaded!', 'success');
+    } catch (e) {
+      console.error('PDF generation failed:', e);
+      Utils.showToast('PDF generation failed: ' + e.message, 'error');
+    }
   });
 
   async function init() { await loadSettings(); await loadFilters(); await Promise.all([loadDashboard(), loadAllBills()]); }
