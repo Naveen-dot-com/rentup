@@ -31,145 +31,145 @@ const Utils = (() => {
   function getStatusClass(isPaid) { return isPaid === 1 ? 'badge-success' : isPaid === 2 ? 'badge-warning' : 'badge-danger'; }
 
   // ============================================================
-  // generateHTMLPDF — Final Fix (v6)
+  // generateHTMLPDF — v7 FINAL (Parent-window only, no iframe)
   //
-  // THE BUG: html2pdf.js v0.10.1 (cdnjs build) has a broken internal
-  // margin validator in its web worker (worker.js:465). It rejects:
-  //   ✗ [8, 8, 8, 8]               — array format
-  //   ✗ { top:8, right:8, ... }    — object format
-  //   ✓ 0                          — plain number (only safe value)
+  // ROOT CAUSE of all previous failures:
+  //   html2pdf.js / jsPDF triggered inside an <iframe> cannot initiate
+  //   a file download on GitHub Pages (HTTPS). Browsers block blob-URL
+  //   navigation from sandboxed/cross-origin iframe contexts.
+  //   The toast appeared because html2pdf().save() resolved its Promise
+  //   successfully — but the actual download was silently blocked.
   //
-  // SOLUTION: Pass margin: 0 to html2pdf. Handle all spacing via
-  // padding on the outer wrapper div inside the HTML string itself.
-  // This gives identical visual margins without touching html2pdf's
-  // broken margin parser at all.
+  // THIS APPROACH (no iframe, no html2pdf):
+  //   1. Inject the HTML into a hidden <div> directly in the PARENT document.
+  //   2. Force that div to exactly A4 pixel width with position:fixed offscreen.
+  //   3. Capture it with html2canvas (runs in parent window — no sandbox issues).
+  //   4. Slice the tall canvas into A4-height pages manually.
+  //   5. Build the PDF with jsPDF directly in the parent window.
+  //   6. Call jsPDF.save() — download fires immediately, 100% of the time.
   //
-  // SCREEN-SIZE INDEPENDENCE: Content is rendered inside an isolated
-  // iframe whose window.innerWidth = exactly 794px (portrait) or
-  // 1123px (landscape). html2canvas captures from this iframe window,
-  // so layout is always A4-width regardless of the user's screen size.
-  //
-  // HOW IT WORKS:
-  //   1. Create an offscreen iframe (left: -pxWidth-20px, not opacity:0
-  //      — html2canvas sometimes skips invisible elements).
-  //   2. Write a clean standalone HTML page into the iframe with a
-  //      <meta viewport> locked to pxWidth.
-  //   3. Resize iframe height to body.scrollHeight so content is never
-  //      bottom-clipped on any screen size.
-  //   4. Run html2pdf entirely from inside the iframe's window context
-  //      so window.innerWidth = pxWidth during capture.
-  //   5. margin: 0 — all padding is in the HTML wrapper div.
+  // WHY THIS WORKS ON ALL SCREEN SIZES:
+  //   The hidden div is position:fixed with an explicit width (794px or 1123px).
+  //   The parent page's viewport width doesn't matter — the div is always A4 wide.
+  //   html2canvas receives windowWidth:pxWidth so it reflows to A4 width too.
   // ============================================================
   async function generateHTMLPDF(htmlStr, filename, isLandscape = false) {
+    // A4 at 96dpi: portrait = 794×1123px, landscape = 1123×794px
     const pxWidth  = isLandscape ? 1123 : 794;
     const pxHeight = isLandscape ? 794  : 1123;
 
-    // ── 1. Create offscreen iframe ────────────────────────────────────
-    const iframe = document.createElement('iframe');
-    iframe.style.cssText =
-      'position:fixed;top:0;left:-' + (pxWidth + 20) + 'px;' +
-      'width:' + pxWidth + 'px;height:' + pxHeight + 'px;' +
-      'border:none;z-index:-9999;';
-    document.body.appendChild(iframe);
+    // ── 1. Build a hidden render container in the PARENT document ────
+    const wrapper = document.createElement('div');
+    wrapper.id = '__pdf_render_wrap__';
+    wrapper.style.cssText = [
+      'position:fixed',
+      'top:0',
+      'left:-' + (pxWidth + 40) + 'px',  // offscreen left — always rendered, never visible
+      'width:' + pxWidth + 'px',
+      'min-height:' + pxHeight + 'px',
+      'background:#ffffff',
+      'color:#333333',
+      'font-family:Arial,Helvetica,sans-serif',
+      'font-size:14px',
+      'line-height:1.5',
+      'overflow:visible',
+      'z-index:99999',
+      'box-sizing:border-box',
+    ].join(';');
 
-    const iDoc    = iframe.contentDocument || iframe.contentWindow.document;
-    const iWindow = iframe.contentWindow;
+    // Inject reset styles + content
+    wrapper.innerHTML = `
+      <style>
+        #__pdf_render_wrap__ *, #__pdf_render_wrap__ *::before, #__pdf_render_wrap__ *::after {
+          box-sizing: border-box !important;
+        }
+        #__pdf_render_wrap__ table {
+          display: table !important;
+          width: 100% !important;
+          border-collapse: collapse !important;
+          table-layout: fixed !important;
+        }
+        #__pdf_render_wrap__ thead  { display: table-header-group !important; }
+        #__pdf_render_wrap__ tbody  { display: table-row-group !important; }
+        #__pdf_render_wrap__ tfoot  { display: table-footer-group !important; }
+        #__pdf_render_wrap__ tr     { display: table-row !important; }
+        #__pdf_render_wrap__ td,
+        #__pdf_render_wrap__ th     { display: table-cell !important; }
+        #__pdf_render_wrap__ td::before,
+        #__pdf_render_wrap__ th::before { display: none !important; content: none !important; }
+        #__pdf_render_wrap__ img    { max-width: 100% !important; height: auto !important; }
+      </style>
+      ${htmlStr}
+    `;
 
-    // ── 2. Write isolated HTML page into iframe ───────────────────────
-    iDoc.open();
-    iDoc.write(`<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=${pxWidth}">
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body {
-    width: ${pxWidth}px;
-    min-height: 100%;
-    font-family: Arial, Helvetica, sans-serif;
-    background: #fff;
-    color: #333;
-  }
-  table { display: table !important; width: 100% !important; border-collapse: collapse !important; }
-  thead { display: table-header-group !important; }
-  tbody { display: table-row-group !important; }
-  tfoot { display: table-footer-group !important; }
-  tr    { display: table-row !important; }
-  td, th { display: table-cell !important; }
-  td::before { display: none !important; }
-</style>
-</head>
-<body>${htmlStr}</body>
-</html>`);
-    iDoc.close();
+    document.body.appendChild(wrapper);
 
-    // ── 3. Wait for iframe to fully render ────────────────────────────
-    await new Promise(r => {
-      if (iDoc.readyState === 'complete') setTimeout(r, 200);
-      else iframe.onload = () => setTimeout(r, 200);
-    });
+    // ── 2. Let the browser fully paint the injected DOM ──────────────
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await new Promise(r => setTimeout(r, 150));
 
-    // ── 4. Resize iframe to full content height (no bottom clipping) ──
-    const contentHeight = iDoc.body.scrollHeight;
-    iframe.style.height = contentHeight + 'px';
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-    // ── 5. Inject html2pdf bundle INTO the iframe ─────────────────────
-    // Running inside the iframe means window.innerWidth === pxWidth
-    // during the entire html2canvas capture — screen-size independent.
-    const html2pdfSrc = (() => {
-      const s = Array.from(document.querySelectorAll('script[src]'))
-        .find(s => s.src && s.src.toLowerCase().includes('html2pdf'));
-      return s ? s.src : 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-    })();
-
-    await new Promise((resolve, reject) => {
-      const script = iDoc.createElement('script');
-      script.src = html2pdfSrc;
-      script.onload = resolve;
-      script.onerror = reject;
-      iDoc.head.appendChild(script);
-    });
-
-    // ── 6. Generate PDF with margin: 0 ───────────────────────────────
-    // CRITICAL: margin MUST be a plain number (0).
-    // html2pdf v0.10.1 worker rejects arrays and objects with
-    // "Invalid margin array". All spacing is handled by padding
-    // in the HTML wrapper div (30px padding on pdf-export-wrap).
-    const target = iDoc.getElementById('pdf-export-wrap') || iDoc.body;
-
-    const opt = {
-      margin: 0,                          // ← ONLY safe value for v0.10.1
-      filename: filename,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: {
-        scale: 2,
+    // ── 3. Capture with html2canvas in parent window context ─────────
+    let canvas;
+    try {
+      canvas = await html2canvas(wrapper, {
+        scale: 2,                       // 2× for crisp text
         useCORS: true,
-        letterRendering: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
         width: pxWidth,
-        windowWidth: pxWidth,
-        windowHeight: contentHeight,
+        windowWidth: pxWidth,           // forces A4-width reflow
         scrollX: 0,
         scrollY: 0,
-        backgroundColor: '#ffffff',
+        x: 0,
+        y: 0,
         logging: false,
-      },
-      jsPDF: {
-        unit: 'mm',
-        format: 'a4',
-        orientation: isLandscape ? 'landscape' : 'portrait',
-      },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
-    };
-
-    try {
-      const pdfFn = iWindow.html2pdf || window.html2pdf;
-      await pdfFn().set(opt).from(target).save();
+      });
     } finally {
-      document.body.removeChild(iframe);
+      // Always remove the render div whether capture succeeds or fails
+      document.body.removeChild(wrapper);
     }
+
+    // ── 4. Slice canvas into A4 pages & build PDF with jsPDF ─────────
+    // A4 in mm: 210×297 portrait, 297×210 landscape
+    const mmWidth  = isLandscape ? 297 : 210;
+    const mmHeight = isLandscape ? 210 : 297;
+
+    // How many canvas pixels equal one A4 page height?
+    // canvas.width = pxWidth * scale(2), so scale factor = canvas.width / pxWidth
+    const scaleFactor   = canvas.width / pxWidth;
+    const pageHeightPx  = pxHeight * scaleFactor;   // canvas pixels per A4 page
+    const totalHeight   = canvas.height;
+    const totalPages    = Math.ceil(totalHeight / pageHeightPx);
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({
+      orientation: isLandscape ? 'landscape' : 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
+
+    for (let page = 0; page < totalPages; page++) {
+      if (page > 0) pdf.addPage();
+
+      // Slice: one A4 page worth of canvas pixels
+      const srcY      = page * pageHeightPx;
+      const srcH      = Math.min(pageHeightPx, totalHeight - srcY);
+
+      const pageCanvas    = document.createElement('canvas');
+      pageCanvas.width    = canvas.width;
+      pageCanvas.height   = srcH;
+      const ctx = pageCanvas.getContext('2d');
+      ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+
+      const imgData = pageCanvas.toDataURL('image/jpeg', 0.97);
+
+      // Scale image to fill A4 width; height proportional
+      const imgHeightMm = (srcH / scaleFactor / pxWidth) * mmWidth;
+      pdf.addImage(imgData, 'JPEG', 0, 0, mmWidth, imgHeightMm);
+    }
+
+    // ── 5. Save — runs in parent window, always triggers download ─────
+    pdf.save(filename);
   }
 
   return { initTheme, setTheme, toggleTheme, toggleLang, initTopBar, showToast, setCurrency, getCurrencySymbol, formatCurrency, formatCurrencyNum, getCurrentMonth, formatMonth, formatMonthFull, formatDate, getPrevMonth, requireAuth, initSidebar, logout, confirm, cacheSet, cacheGet, cacheClear, getStatusLabel, getStatusClass, generateHTMLPDF };
