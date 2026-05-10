@@ -39,7 +39,7 @@ $(function () {
 
   async function loadAllBills() {
     try {
-      const res = await API.getBills(); // all bills, no filter
+      const res = await API.getBills();
       allBills = res.data;
       renderCharts();
     } catch {}
@@ -51,10 +51,6 @@ $(function () {
     const propId = $('#chart-property').val();
     const roomId = $('#chart-room').val();
     if (year) bills = bills.filter(b => b.month.startsWith(year));
-    if (propId) bills = bills.filter(b => {
-      const room = allBills.find(x => x.id === b.id);
-      return String(b.property_name) === String($('#chart-property option:selected').text());
-    });
     if (propId) bills = bills.filter(b => b.property_name === $('#chart-property option:selected').text());
     if (roomId) bills = bills.filter(b => String(b.room_id) === String(roomId));
     return bills;
@@ -147,7 +143,7 @@ $(function () {
         return va < vb ? -1 * rSortDir : va > vb ? 1 * rSortDir : 0;
       });
       renderRecentBills(sorted);
-      $('#search-recent').trigger('input'); // re-apply search
+      $('#search-recent').trigger('input');
     }
   });
 
@@ -158,90 +154,68 @@ $(function () {
     });
   });
 
-  // Dashboard PDF
+  // ── Dashboard PDF Export ──────────────────────────────────────────
   $('#btn-dash-pdf').on('click', async function () {
     if (!dashData) return;
     const sym = Utils.getCurrencySymbol();
 
-    // Capture charts as base64 images BEFORE generating PDF
+    // Capture live charts as base64 PNG images before PDF generation
     let imagesHtml = '';
     try {
-      ['chart-revenue', 'chart-rent', 'chart-elec', 'chart-gas'].forEach((id) => {
-        const c = document.getElementById(id);
-        if (c) {
-          imagesHtml += `<img src="${c.toDataURL('image/png')}" style="width:48%;display:inline-block;margin:1%;border-radius:8px;border:1px solid #eee;">`;
+      ['chart-revenue', 'chart-rent', 'chart-elec', 'chart-gas'].forEach(id => {
+        const canvas = document.getElementById(id);
+        if (canvas) {
+          imagesHtml += `<img src="${canvas.toDataURL('image/png')}" style="width:49%;display:inline-block;vertical-align:top;margin:0 0.5% 8px;border-radius:6px;border:1px solid #eee;">`;
         }
       });
-    } catch (e) {
-      console.warn('Chart image capture failed:', e);
-    }
+    } catch (e) { console.warn('Chart capture failed:', e); }
 
     let rowsHtml = '';
     if (dashData.recent_bills && dashData.recent_bills.length) {
       dashData.recent_bills.forEach(b => {
-        rowsHtml += `
-          <tr>
-            <td style="padding:8px;border:1px solid #ddd;">${b.tenant_name || '-'}</td>
-            <td style="padding:8px;border:1px solid #ddd;">${b.room_name}</td>
-            <td style="padding:8px;border:1px solid #ddd;">${b.property_name}</td>
-            <td style="padding:8px;border:1px solid #ddd;">${Utils.formatMonth(b.month)}</td>
-            <td style="padding:8px;border:1px solid #ddd;">${sym} ${Utils.formatCurrencyNum(b.total_amount)}</td>
-            <td style="padding:8px;border:1px solid #ddd;">${Utils.getStatusLabel(b.is_paid)}</td>
-          </tr>`;
+        rowsHtml += `<tr>
+          <td style="padding:7px 8px;border:1px solid #ddd;">${b.tenant_name || '-'}</td>
+          <td style="padding:7px 8px;border:1px solid #ddd;">${b.room_name}</td>
+          <td style="padding:7px 8px;border:1px solid #ddd;">${b.property_name}</td>
+          <td style="padding:7px 8px;border:1px solid #ddd;">${Utils.formatMonth(b.month)}</td>
+          <td style="padding:7px 8px;border:1px solid #ddd;">${sym} ${Utils.formatCurrencyNum(b.total_amount)}</td>
+          <td style="padding:7px 8px;border:1px solid #ddd;">${Utils.getStatusLabel(b.is_paid)}</td>
+        </tr>`;
       });
     }
 
+    // NOTE: All page margins are handled by padding on #pdf-export-wrap
+    // (30px). Do NOT add margin in Utils.generateHTMLPDF — html2pdf v0.10.1
+    // throws "Invalid margin array" for anything except a plain number 0.
     const html = `
-      <style>
-        #pdf-export-wrap table { display:table !important; width:100% !important; border-collapse:collapse !important; }
-        #pdf-export-wrap tr    { display:table-row !important; }
-        #pdf-export-wrap td, #pdf-export-wrap th { display:table-cell !important; padding:8px !important; }
-        #pdf-export-wrap thead { display:table-header-group !important; }
-        #pdf-export-wrap tbody { display:table-row-group !important; }
-        #pdf-export-wrap td::before { display:none !important; }
-      </style>
-      <div id="pdf-export-wrap" style="font-family:Arial,sans-serif;padding:30px;color:#333;width:700px;background:#fff;">
-        <h1 style="color:#6c5ce7;margin:0 0 5px 0;font-size:28px;">RentUp</h1>
-        <h3 style="color:#555;margin:0 0 20px 0;font-size:16px;">${t('dash_title')} — ${Utils.formatMonthFull(dashData.current_month)}</h3>
+      <div id="pdf-export-wrap" style="font-family:Arial,Helvetica,sans-serif;padding:30px;color:#333;width:734px;background:#fff;">
+        <h1 style="color:#6c5ce7;margin:0 0 4px 0;font-size:26px;font-weight:700;">RentUp</h1>
+        <h3 style="color:#555;margin:0 0 18px 0;font-size:14px;font-weight:400;">${t('dash_title')} — ${Utils.formatMonthFull(dashData.current_month)}</h3>
 
-        <table style="width:100%;margin-bottom:25px;font-size:14px;border-collapse:collapse;">
-          <tr>
-            <td style="padding:6px 0;width:40%;border-bottom:1px solid #eee;"><strong>${t('dash_properties')}:</strong></td>
-            <td style="padding:6px 0;border-bottom:1px solid #eee;">${dashData.total_properties}</td>
-          </tr>
-          <tr>
-            <td style="padding:6px 0;border-bottom:1px solid #eee;"><strong>${t('dash_rooms')}:</strong></td>
-            <td style="padding:6px 0;border-bottom:1px solid #eee;">${dashData.total_rooms}</td>
-          </tr>
-          <tr>
-            <td style="padding:6px 0;border-bottom:1px solid #eee;"><strong>${t('dash_monthly_revenue')}:</strong></td>
-            <td style="padding:6px 0;border-bottom:1px solid #eee;">${sym} ${Utils.formatCurrencyNum(dashData.monthly_revenue)}</td>
-          </tr>
-          <tr>
-            <td style="padding:6px 0;"><strong>${t('dash_unpaid_bills')}:</strong></td>
-            <td style="padding:6px 0;">${dashData.unpaid_count}</td>
-          </tr>
+        <table style="width:100%;margin-bottom:20px;font-size:13px;border-collapse:collapse;">
+          <tr><td style="padding:5px 0;width:45%;border-bottom:1px solid #eee;"><strong>${t('dash_properties')}:</strong></td><td style="padding:5px 0;border-bottom:1px solid #eee;">${dashData.total_properties}</td></tr>
+          <tr><td style="padding:5px 0;border-bottom:1px solid #eee;"><strong>${t('dash_rooms')}:</strong></td><td style="padding:5px 0;border-bottom:1px solid #eee;">${dashData.total_rooms}</td></tr>
+          <tr><td style="padding:5px 0;border-bottom:1px solid #eee;"><strong>${t('dash_monthly_revenue')}:</strong></td><td style="padding:5px 0;border-bottom:1px solid #eee;">${sym} ${Utils.formatCurrencyNum(dashData.monthly_revenue)}</td></tr>
+          <tr><td style="padding:5px 0;"><strong>${t('dash_unpaid_bills')}:</strong></td><td style="padding:5px 0;">${dashData.unpaid_count}</td></tr>
         </table>
 
-        <div style="margin-bottom:20px;font-size:0;">
-          ${imagesHtml}
-        </div>
+        ${imagesHtml ? `<div style="margin-bottom:18px;font-size:0;line-height:0;">${imagesHtml}</div>` : ''}
 
         ${rowsHtml ? `
-        <h4 style="color:#444;margin:0 0 10px 0;">${t('dash_recent_bills')}</h4>
-        <table style="width:100%;border-collapse:collapse;font-size:12px;text-align:left;">
-          <thead>
-            <tr style="background:#6c5ce7;color:#fff;">
-              <th style="padding:8px;border:1px solid #5a4ec9;">${t('th_tenant')}</th>
-              <th style="padding:8px;border:1px solid #5a4ec9;">${t('th_room')}</th>
-              <th style="padding:8px;border:1px solid #5a4ec9;">${t('th_property')}</th>
-              <th style="padding:8px;border:1px solid #5a4ec9;">${t('th_month')}</th>
-              <th style="padding:8px;border:1px solid #5a4ec9;">${t('th_total')}</th>
-              <th style="padding:8px;border:1px solid #5a4ec9;">${t('th_status')}</th>
-            </tr>
-          </thead>
-          <tbody>${rowsHtml}</tbody>
-        </table>` : ''}
+          <h4 style="color:#444;margin:0 0 8px 0;font-size:13px;">${t('dash_recent_bills')}</h4>
+          <table style="width:100%;border-collapse:collapse;font-size:11px;text-align:left;">
+            <thead>
+              <tr style="background:#6c5ce7;color:#fff;">
+                <th style="padding:7px 8px;border:1px solid #5a4ec9;">${t('th_tenant')}</th>
+                <th style="padding:7px 8px;border:1px solid #5a4ec9;">${t('th_room')}</th>
+                <th style="padding:7px 8px;border:1px solid #5a4ec9;">${t('th_property')}</th>
+                <th style="padding:7px 8px;border:1px solid #5a4ec9;">${t('th_month')}</th>
+                <th style="padding:7px 8px;border:1px solid #5a4ec9;">${t('th_total')}</th>
+                <th style="padding:7px 8px;border:1px solid #5a4ec9;">${t('th_status')}</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>` : ''}
       </div>`;
 
     Utils.showToast(t('loading') || 'Generating PDF...', 'info');
