@@ -30,180 +30,90 @@ const Utils = (() => {
   function getStatusLabel(isPaid) { return isPaid === 1 ? t('status_paid') : isPaid === 2 ? t('status_partial') : t('status_unpaid'); }
   function getStatusClass(isPaid) { return isPaid === 1 ? 'badge-success' : isPaid === 2 ? 'badge-warning' : 'badge-danger'; }
 
-  // ============================================================
-  // generateHTMLPDF — v8 FINAL (squish fix)
-  //
-  // ROOT CAUSE OF TEXT SQUISH (confirmed from PDF analysis):
-  //   The wrapper div is appended to document.body and inherits ALL
-  //   styles from style.css including:
-  //     - body { -webkit-font-smoothing: antialiased }
-  //       → changes glyph metrics at scale:2, tightens spacing
-  //     - thead th { letter-spacing: 0.05em }
-  //       → inherited by all descendant text nodes
-  //     - tbody td::before { letter-spacing: 0.05em; content: attr(data-label) }
-  //       → generates pseudo-elements that push/overlap real cell text
-  //     - .brand { -webkit-text-fill-color: transparent }
-  //       → makes text invisible (gradient clip from sidebar brand)
-  //     - html2canvas scale:2 amplifies all of these
-  //
-  // FIX:
-  //   1. Prepend a comprehensive CSS isolation block inside wrapper.innerHTML
-  //      that hard-resets EVERY text-affecting property on #__pdf_render_wrap__
-  //      and ALL its descendants using !important.
-  //   2. Explicitly zero out: letter-spacing, word-spacing, font-kerning,
-  //      -webkit-font-smoothing, text-rendering, -webkit-text-fill-color,
-  //      font-feature-settings, text-transform, white-space.
-  //   3. Kill all ::before / ::after pseudo-elements (data-label overlays).
-  //   4. Apply font-family: Arial directly on the wrapper (not inherited var()).
-  //   5. Use scale:1 instead of scale:2 — scale:2 interacts with subpixel
-  //      rendering to cause glyph overlap. Scale 1.5 is the sweet spot for
-  //      quality without rendering artifacts.
-  // ============================================================
-
-  // Master CSS isolation block — injected before every PDF's HTML content
-  const PDF_RESET_CSS = `
-    <style id="__pdf_reset__">
-      #__pdf_render_wrap__,
-      #__pdf_render_wrap__ * {
-        font-family: Arial, Helvetica, sans-serif !important;
-        letter-spacing: normal !important;
-        word-spacing: normal !important;
-        font-kerning: none !important;
-        font-feature-settings: normal !important;
-        text-rendering: auto !important;
-        -webkit-font-smoothing: subpixel-antialiased !important;
-        -moz-osx-font-smoothing: auto !important;
-        -webkit-text-fill-color: currentColor !important;
-        -webkit-background-clip: unset !important;
-        background-clip: unset !important;
-        text-transform: none !important;
-        white-space: normal !important;
-        word-break: normal !important;
-        overflow-wrap: normal !important;
-        box-sizing: border-box !important;
-      }
-
-      /* Kill ALL pseudo-elements — style.css injects data-label overlaps */
-      #__pdf_render_wrap__ *::before,
-      #__pdf_render_wrap__ *::after {
-        display: none !important;
-        content: none !important;
-      }
-
-      /* Table hard reset */
-      #__pdf_render_wrap__ table {
-        display: table !important;
-        width: 100% !important;
-        border-collapse: collapse !important;
-        table-layout: auto !important;
-      }
-      #__pdf_render_wrap__ thead  { display: table-header-group !important; }
-      #__pdf_render_wrap__ tbody  { display: table-row-group !important; }
-      #__pdf_render_wrap__ tfoot  { display: table-footer-group !important; }
-      #__pdf_render_wrap__ tr     { display: table-row !important; }
-      #__pdf_render_wrap__ td,
-      #__pdf_render_wrap__ th     { display: table-cell !important; }
-
-      /* Images */
-      #__pdf_render_wrap__ img    { max-width: 100% !important; height: auto !important; display: block !important; }
-    </style>
-  `;
-
   async function generateHTMLPDF(htmlStr, filename, isLandscape = false) {
     const pxWidth  = isLandscape ? 1123 : 794;
     const pxHeight = isLandscape ? 794  : 1123;
 
-    // ── 1. Create isolated wrapper div in parent document ─────────────
-    const wrapper = document.createElement('div');
-    wrapper.id = '__pdf_render_wrap__';
-    wrapper.style.cssText = [
-      'position:fixed',
-      'top:0',
-      'left:-' + (pxWidth + 40) + 'px',
-      'width:' + pxWidth + 'px',
-      'min-height:' + pxHeight + 'px',
-      'background:#ffffff',
-      'color:#333333',
-      'font-family:Arial,Helvetica,sans-serif',
-      'font-size:14px',
-      'line-height:1.5',
-      'letter-spacing:normal',
-      'word-spacing:normal',
-      '-webkit-font-smoothing:subpixel-antialiased',
-      'overflow:visible',
-      'z-index:99999',
-      'box-sizing:border-box',
-    ].join(';');
+    // APPROACH: same-origin hidden iframe → zero CSS inheritance from style.css
+    // html2canvas runs in PARENT window targeting iframe.contentDocument.body
+    // jsPDF.save() runs in PARENT window → download always fires
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText =
+      'position:fixed;top:0;left:-' + (pxWidth + 40) + 'px;' +
+      'width:' + pxWidth + 'px;height:' + pxHeight + 'px;' +
+      'border:none;z-index:99999;background:#fff;';
+    document.body.appendChild(iframe);
 
-    // Inject reset CSS first, then the actual content
-    wrapper.innerHTML = PDF_RESET_CSS + htmlStr;
+    const iDoc = iframe.contentDocument;
+    iDoc.open();
+    iDoc.write('<!DOCTYPE html><html><head><meta charset="utf-8">' +
+      '<style>' +
+      'html,body{margin:0;padding:0;background:#fff;width:' + pxWidth + 'px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#333;letter-spacing:normal;word-spacing:normal;}' +
+      '*{box-sizing:border-box;letter-spacing:normal!important;word-spacing:normal!important;-webkit-text-fill-color:currentColor!important;-webkit-font-smoothing:subpixel-antialiased!important;}' +
+      'table{display:table!important;width:100%!important;border-collapse:collapse!important;table-layout:auto!important;}' +
+      'thead{display:table-header-group!important;}tbody{display:table-row-group!important;}tfoot{display:table-footer-group!important;}' +
+      'tr{display:table-row!important;}td,th{display:table-cell!important;}' +
+      'td::before,td::after,th::before,th::after{display:none!important;content:none!important;}' +
+      'img{max-width:100%;height:auto;display:inline-block;}' +
+      '</style></head><body>' + htmlStr + '</body></html>');
+    iDoc.close();
 
-    document.body.appendChild(wrapper);
-
-    // ── 2. Let browser fully paint ────────────────────────────────────
+    // Wait for iframe content to fully render
+    await new Promise(r => {
+      if (iDoc.readyState === 'complete') setTimeout(r, 300);
+      else iframe.onload = () => setTimeout(r, 300);
+    });
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-    await new Promise(r => setTimeout(r, 200));
 
-    // ── 3. html2canvas capture — scale 1.5 avoids subpixel squish ────
+    // Resize iframe height to full content so nothing is clipped
+    const contentHeight = Math.max(iDoc.body.scrollHeight, pxHeight);
+    iframe.style.height = contentHeight + 'px';
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    // html2canvas runs in PARENT window but targets the iframe's body
+    // Same-origin iframe body is fully accessible — no sandbox restrictions
     let canvas;
     try {
-      canvas = await html2canvas(wrapper, {
-        scale: 1.5,
+      canvas = await html2canvas(iDoc.body, {
+        scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
         width: pxWidth,
         windowWidth: pxWidth,
+        windowHeight: contentHeight,
         scrollX: 0,
         scrollY: 0,
-        x: 0,
-        y: 0,
         logging: false,
-        onclone: (clonedDoc) => {
-          // Extra safety: re-apply isolation to the cloned document's wrapper
-          const el = clonedDoc.getElementById('__pdf_render_wrap__');
-          if (el) {
-            el.style.letterSpacing = 'normal';
-            el.style.wordSpacing = 'normal';
-            el.style.webkitFontSmoothing = 'subpixel-antialiased';
-            el.style.fontFamily = 'Arial, Helvetica, sans-serif';
-          }
-        }
       });
     } finally {
-      document.body.removeChild(wrapper);
+      document.body.removeChild(iframe);
     }
 
-    // ── 4. Slice canvas into A4 pages ─────────────────────────────────
-    const mmWidth   = isLandscape ? 297 : 210;
-    const mmHeight  = isLandscape ? 210 : 297;
+    // Slice canvas into A4 pages and build PDF
+    const mmWidth  = isLandscape ? 297 : 210;
     const scaleFactor  = canvas.width / pxWidth;
     const pageHeightPx = pxHeight * scaleFactor;
-    const totalHeight  = canvas.height;
-    const totalPages   = Math.ceil(totalHeight / pageHeightPx);
+    const totalPages   = Math.ceil(canvas.height / pageHeightPx);
 
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({
-      orientation: isLandscape ? 'landscape' : 'portrait',
-      unit: 'mm',
-      format: 'a4',
-    });
+    const pdf = new jsPDF({ orientation: isLandscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
 
     for (let page = 0; page < totalPages; page++) {
       if (page > 0) pdf.addPage();
-      const srcY   = page * pageHeightPx;
-      const srcH   = Math.min(pageHeightPx, totalHeight - srcY);
-      const pageCanvas = document.createElement('canvas');
-      pageCanvas.width  = canvas.width;
-      pageCanvas.height = srcH;
-      pageCanvas.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+      const srcY = page * pageHeightPx;
+      const srcH = Math.min(pageHeightPx, canvas.height - srcY);
+      const pc   = document.createElement('canvas');
+      pc.width   = canvas.width;
+      pc.height  = srcH;
+      pc.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
       const imgHeightMm = (srcH / scaleFactor / pxWidth) * mmWidth;
-      pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.97), 'JPEG', 0, 0, mmWidth, imgHeightMm);
+      pdf.addImage(pc.toDataURL('image/jpeg', 0.97), 'JPEG', 0, 0, mmWidth, imgHeightMm);
     }
 
-    // ── 5. Save in parent window — always triggers download ───────────
     pdf.save(filename);
   }
+
 
   return { initTheme, setTheme, toggleTheme, toggleLang, initTopBar, showToast, setCurrency, getCurrencySymbol, formatCurrency, formatCurrencyNum, getCurrentMonth, formatMonth, formatMonthFull, formatDate, getPrevMonth, requireAuth, initSidebar, logout, confirm, cacheSet, cacheGet, cacheClear, getStatusLabel, getStatusClass, generateHTMLPDF };
 })();
