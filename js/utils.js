@@ -169,7 +169,7 @@ const Utils = (() => {
     const target = iDoc.getElementById('pdf-export-wrap') || iDoc.body;
 
     const opt = {
-      margin: [8, 8, 8, 8],
+      margin: { top: 8, right: 8, bottom: 8, left: 8 },
       filename: filename,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: {
