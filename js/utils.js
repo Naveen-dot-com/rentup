@@ -30,54 +30,41 @@ const Utils = (() => {
   function getStatusLabel(isPaid) { return isPaid === 1 ? t('status_paid') : isPaid === 2 ? t('status_partial') : t('status_unpaid'); }
   function getStatusClass(isPaid) { return isPaid === 1 ? 'badge-success' : isPaid === 2 ? 'badge-warning' : 'badge-danger'; }
 
-
   // ============================================================
-  // generateHTMLPDF — Fixed v5 (cross-screen)
+  // generateHTMLPDF — Final Fix (v6)
   //
-  // ROOT CAUSE (confirmed from PDF comparison):
-  //   The laptop export shows only the RIGHT half of a 2-column chart
-  //   grid and only the last 2 columns of the table — classic sign that
-  //   html2canvas is using the PARENT page's viewport width (e.g. 1440px)
-  //   to lay out content, then capturing only the first 794px of that
-  //   wide layout. The left portion of each row falls inside those first
-  //   794px but the header/title area is cropped at the top because the
-  //   parent page is scrolled down.
+  // THE BUG: html2pdf.js v0.10.1 (cdnjs build) has a broken internal
+  // margin validator in its web worker (worker.js:465). It rejects:
+  //   ✗ [8, 8, 8, 8]               — array format
+  //   ✗ { top:8, right:8, ... }    — object format
+  //   ✓ 0                          — plain number (only safe value)
   //
-  //   html2canvas reads window.innerWidth and document.documentElement
-  //   from the PARENT window, not from the iframe — so windowWidth: pxWidth
-  //   alone is insufficient. It only sets the canvas clip width, not the
-  //   reflow width.
+  // SOLUTION: Pass margin: 0 to html2pdf. Handle all spacing via
+  // padding on the outer wrapper div inside the HTML string itself.
+  // This gives identical visual margins without touching html2pdf's
+  // broken margin parser at all.
   //
-  // FIX: Inject html2canvas + html2pdf scripts INTO the iframe itself,
-  //   then run the capture entirely inside the iframe's own window context.
-  //   Inside the iframe, window.innerWidth IS pxWidth, so layout,
-  //   capture, and clipping are all consistent and screen-independent.
+  // SCREEN-SIZE INDEPENDENCE: Content is rendered inside an isolated
+  // iframe whose window.innerWidth = exactly 794px (portrait) or
+  // 1123px (landscape). html2canvas captures from this iframe window,
+  // so layout is always A4-width regardless of the user's screen size.
   //
-  // Changes from v4:
-  //   1. Load html2canvas script tag inside the iframe (same CDN src).
-  //   2. Load jsPDF + html2pdf scripts inside the iframe.
-  //   3. Run html2pdf().set(opt).from(target).save() inside iWindow,
-  //      not in the parent window.
-  //   4. iframe height set to body.scrollHeight BEFORE capture (from v4).
-  //   5. Iframe positioned offscreen LEFT so capture always works.
+  // HOW IT WORKS:
+  //   1. Create an offscreen iframe (left: -pxWidth-20px, not opacity:0
+  //      — html2canvas sometimes skips invisible elements).
+  //   2. Write a clean standalone HTML page into the iframe with a
+  //      <meta viewport> locked to pxWidth.
+  //   3. Resize iframe height to body.scrollHeight so content is never
+  //      bottom-clipped on any screen size.
+  //   4. Run html2pdf entirely from inside the iframe's window context
+  //      so window.innerWidth = pxWidth during capture.
+  //   5. margin: 0 — all padding is in the HTML wrapper div.
   // ============================================================
   async function generateHTMLPDF(htmlStr, filename, isLandscape = false) {
     const pxWidth  = isLandscape ? 1123 : 794;
     const pxHeight = isLandscape ? 794  : 1123;
 
-    // ── 1. Resolve CDN URLs for html2canvas + html2pdf from parent page ──
-    // We reuse the same scripts already loaded on the parent page so
-    // there's no version mismatch.
-    function getScriptSrc(keyword) {
-      const scripts = Array.from(document.querySelectorAll('script[src]'));
-      const match = scripts.find(s => s.src && s.src.toLowerCase().includes(keyword));
-      return match ? match.src : null;
-    }
-    const html2canvasSrc = getScriptSrc('html2canvas') || 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-    const jspdfSrc       = getScriptSrc('jspdf')       || 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-    const html2pdfSrc    = getScriptSrc('html2pdf')    || 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-
-    // ── 2. Create iframe: offscreen LEFT, will grow to content height ──
+    // ── 1. Create offscreen iframe ────────────────────────────────────
     const iframe = document.createElement('iframe');
     iframe.style.cssText =
       'position:fixed;top:0;left:-' + (pxWidth + 20) + 'px;' +
@@ -88,7 +75,7 @@ const Utils = (() => {
     const iDoc    = iframe.contentDocument || iframe.contentWindow.document;
     const iWindow = iframe.contentWindow;
 
-    // ── 3. Write isolated page WITH the pdf scripts injected inside ──
+    // ── 2. Write isolated HTML page into iframe ───────────────────────
     iDoc.open();
     iDoc.write(`<!DOCTYPE html>
 <html>
@@ -117,59 +104,44 @@ const Utils = (() => {
 </html>`);
     iDoc.close();
 
-    // ── 4. Wait for iframe document to fully load ────────────────────
+    // ── 3. Wait for iframe to fully render ────────────────────────────
     await new Promise(r => {
-      if (iDoc.readyState === 'complete') setTimeout(r, 150);
-      else iframe.onload = () => setTimeout(r, 150);
+      if (iDoc.readyState === 'complete') setTimeout(r, 200);
+      else iframe.onload = () => setTimeout(r, 200);
     });
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-    // ── 5. Resize iframe to actual content height (no clipping) ──────
+    // ── 4. Resize iframe to full content height (no bottom clipping) ──
     const contentHeight = iDoc.body.scrollHeight;
     iframe.style.height = contentHeight + 'px';
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-    // ── 6. Inject html2canvas + html2pdf INTO the iframe ─────────────
-    //   This is the key fix: all rendering happens inside the iframe's
-    //   own window where window.innerWidth === pxWidth.
+    // ── 5. Inject html2pdf bundle INTO the iframe ─────────────────────
+    // Running inside the iframe means window.innerWidth === pxWidth
+    // during the entire html2canvas capture — screen-size independent.
+    const html2pdfSrc = (() => {
+      const s = Array.from(document.querySelectorAll('script[src]'))
+        .find(s => s.src && s.src.toLowerCase().includes('html2pdf'));
+      return s ? s.src : 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    })();
+
     await new Promise((resolve, reject) => {
-      // html2pdf bundle already includes html2canvas + jsPDF in one file.
-      // Try to load the bundle first; fall back to separate scripts.
-      const tryBundle = () => new Promise((res, rej) => {
-        const s = iDoc.createElement('script');
-        s.src = html2pdfSrc;
-        s.onload = res;
-        s.onerror = rej;
-        iDoc.head.appendChild(s);
-      });
-
-      const tryIndividual = async () => {
-        for (const src of [html2canvasSrc, jspdfSrc]) {
-          await new Promise((res, rej) => {
-            const s = iDoc.createElement('script');
-            s.src = src;
-            s.onload = res;
-            s.onerror = rej;
-            iDoc.head.appendChild(s);
-          });
-        }
-      };
-
-      tryBundle()
-        .then(() => {
-          // If html2pdf bundle loaded, html2canvas and jsPDF are included
-          if (typeof iWindow.html2pdf === 'function') { resolve(); return; }
-          // Bundle loaded but html2pdf not exposed — try individual
-          return tryIndividual().then(resolve).catch(reject);
-        })
-        .catch(() => tryIndividual().then(resolve).catch(reject));
+      const script = iDoc.createElement('script');
+      script.src = html2pdfSrc;
+      script.onload = resolve;
+      script.onerror = reject;
+      iDoc.head.appendChild(script);
     });
 
-    // ── 7. Build the pdf options and run INSIDE the iframe window ────
+    // ── 6. Generate PDF with margin: 0 ───────────────────────────────
+    // CRITICAL: margin MUST be a plain number (0).
+    // html2pdf v0.10.1 worker rejects arrays and objects with
+    // "Invalid margin array". All spacing is handled by padding
+    // in the HTML wrapper div (30px padding on pdf-export-wrap).
     const target = iDoc.getElementById('pdf-export-wrap') || iDoc.body;
 
     const opt = {
-      margin: { top: 8, right: 8, bottom: 8, left: 8 },
+      margin: 0,                          // ← ONLY safe value for v0.10.1
       filename: filename,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: {
@@ -193,14 +165,12 @@ const Utils = (() => {
     };
 
     try {
-      // Run html2pdf inside the iframe's window context
-      const pdf = iWindow.html2pdf || window.html2pdf;
-      await pdf().set(opt).from(target).save();
+      const pdfFn = iWindow.html2pdf || window.html2pdf;
+      await pdfFn().set(opt).from(target).save();
     } finally {
       document.body.removeChild(iframe);
     }
   }
-
 
   return { initTheme, setTheme, toggleTheme, toggleLang, initTopBar, showToast, setCurrency, getCurrencySymbol, formatCurrency, formatCurrencyNum, getCurrentMonth, formatMonth, formatMonthFull, formatDate, getPrevMonth, requireAuth, initSidebar, logout, confirm, cacheSet, cacheGet, cacheClear, getStatusLabel, getStatusClass, generateHTMLPDF };
 })();
