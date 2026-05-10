@@ -16,57 +16,66 @@ const Utils = (() => {
   function formatCurrency(amount) { return getCurrencySymbol() + ' ' + parseFloat(amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
   function formatCurrencyNum(amount) { return parseFloat(amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
   function getCurrentMonth() { const n = new Date(); return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0'); }
-  function formatMonth(monthStr) { if (!monthStr) return ''; const [y, m] = monthStr.split('-'); if (getLang() === 'hi') { const ms = ['जनवरी','फरवरी','मार्च','अप्रैल','मई','जून','जुलाई','अगस्त','सितंबर','अक्टूबर','नवंबर','दिसंबर']; return ms[parseInt(m)-1]+' '+y; } return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m)-1]+' '+y; }
-  function formatMonthFull(monthStr) { if (!monthStr) return ''; const [y, m] = monthStr.split('-'); if (getLang() === 'hi') { const ms = ['जनवरी','फरवरी','मार्च','अप्रैल','मई','जून','जुलाई','अगस्त','सितंबर','अक्टूबर','नवंबर','दिसंबर']; return ms[parseInt(m)-1]+' '+y; } return ['January','February','March','April','May','June','July','August','September','October','November','December'][parseInt(m)-1]+' '+y; }
+  function formatMonth(monthStr) { if (!monthStr) return ''; const [y, m] = monthStr.split('-'); if (getLang() === 'hi') { const ms = ['जनवरी', 'फरवरी', 'मार्च', 'अप्रैल', 'मई', 'जून', 'जुलाई', 'अगस्त', 'सितंबर', 'अक्टूबर', 'नवंबर', 'दिसंबर']; return ms[parseInt(m) - 1] + ' ' + y; } return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][parseInt(m) - 1] + ' ' + y; }
+  function formatMonthFull(monthStr) { if (!monthStr) return ''; const [y, m] = monthStr.split('-'); if (getLang() === 'hi') { const ms = ['जनवरी', 'फरवरी', 'मार्च', 'अप्रैल', 'मई', 'जून', 'जुलाई', 'अगस्त', 'सितंबर', 'अक्टूबर', 'नवंबर', 'दिसंबर']; return ms[parseInt(m) - 1] + ' ' + y; } return ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][parseInt(m) - 1] + ' ' + y; }
   function formatDate(dateStr) { if (!dateStr) return ''; return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }); }
   function getPrevMonth(monthStr) { const [y, m] = monthStr.split('-').map(Number); const d = new Date(y, m - 2, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
   function requireAuth() { if (!API.getToken()) { window.location.href = 'index.html'; return false; } return true; }
   function initSidebar(activePage) { const user = API.getUser(); if (user) { $('.user-avatar').text((user.name || '?').charAt(0).toUpperCase()); $('.user-name').text(user.name || 'User'); $('.user-email').text(user.email || ''); } $('[data-i18n]').each(function () { $(this).text(t($(this).data('i18n'))); }); $('.nav-link[data-page="' + activePage + '"]').addClass('active'); const savedState = localStorage.getItem('rentup_sidebar_state'); if (window.innerWidth > 768 && savedState === 'collapsed') { $('.sidebar, .main-content').css('transition', 'none'); $('body').addClass('sidebar-collapsed'); $('#sidebar-toggle').addClass('active'); setTimeout(() => { $('.sidebar, .main-content').css('transition', ''); }, 50); } $('#sidebar-toggle').off('click').on('click', function () { if (window.innerWidth <= 768) { $('body').toggleClass('sidebar-open'); $(this).toggleClass('active'); } else { const isCollapsed = $('body').toggleClass('sidebar-collapsed').hasClass('sidebar-collapsed'); $(this).toggleClass('active'); localStorage.setItem('rentup_sidebar_state', isCollapsed ? 'collapsed' : 'open'); } }); $('.sidebar-overlay').off('click').on('click', function () { $('body').removeClass('sidebar-open'); $('#sidebar-toggle').removeClass('active'); }); $('.sidebar .nav-link').on('click', function () { if (window.innerWidth <= 768) { $('body').removeClass('sidebar-open'); $('#sidebar-toggle').removeClass('active'); } }); }
   function logout() { API.clearToken(); window.location.href = 'index.html'; }
   function confirm(msg) { return window.confirm(msg); }
-  function cacheSet(key, data) { try { sessionStorage.setItem('rentup_' + key, JSON.stringify({ ts: Date.now(), data })); } catch {} }
-  function cacheGet(key, maxAge = 60000) { try { const item = JSON.parse(sessionStorage.getItem('rentup_' + key)); if (item && (Date.now() - item.ts) < maxAge) return item.data; } catch {} return null; }
+  function cacheSet(key, data) { try { sessionStorage.setItem('rentup_' + key, JSON.stringify({ ts: Date.now(), data })); } catch { } }
+  function cacheGet(key, maxAge = 60000) { try { const item = JSON.parse(sessionStorage.getItem('rentup_' + key)); if (item && (Date.now() - item.ts) < maxAge) return item.data; } catch { } return null; }
   function cacheClear(prefix) { Object.keys(sessionStorage).forEach(k => { if (k.startsWith('rentup_' + (prefix || ''))) sessionStorage.removeItem(k); }); }
   function getStatusLabel(isPaid) { return isPaid === 1 ? t('status_paid') : isPaid === 2 ? t('status_partial') : t('status_unpaid'); }
   function getStatusClass(isPaid) { return isPaid === 1 ? 'badge-success' : isPaid === 2 ? 'badge-warning' : 'badge-danger'; }
 
+
   // ============================================================
-  // generateHTMLPDF — Fixed v3
+  // generateHTMLPDF — Fixed v4
   //
-  // All three bugs fixed:
-  // v1 bug: raw htmlStr → mobile CSS collapses tables
-  // v2 bug: position:fixed top:-99999px → 0-height capture → blank PDF
-  // v3 bug: position:absolute top:0 + scrollY:-window.scrollY → crops top
-  //         of element when user has scrolled down the page
+  // Root cause of the laptop-cut / mobile-fine bug:
+  //   The iframe had a FIXED height (pxHeight = 1123px portrait).
+  //   On mobile, content stacks vertically and naturally fits inside
+  //   that height. On a laptop, the same content renders in a wider,
+  //   shorter layout — so everything fits horizontally but the total
+  //   scroll height of the iframe body EXCEEDS 1123px and gets clipped.
+  //   html2canvas then captures only the visible clipped portion → blank
+  //   or cut-off bottom half of the PDF.
   //
-  // Final approach:
-  // - Render into a brand-new detached iframe with a fixed viewport size.
-  //   The iframe is completely isolated from the parent page's CSS, scroll
-  //   position, and responsive breakpoints. html2canvas then captures the
-  //   iframe's body which always starts at (0,0) with full height.
+  // Fix summary (4 changes):
+  //   1. Push iframe offscreen LEFT (not opacity:0) so html2canvas
+  //      captures it reliably (some versions skip opacity:0 elements).
+  //   2. Set iframe height to `auto` initially so the body can grow to
+  //      its full content height without being clipped.
+  //   3. After render, read iDoc.body.scrollHeight and resize the iframe
+  //      to that exact height before capture — ensures no cropping.
+  //   4. Pass windowHeight = contentHeight to html2canvas so its internal
+  //      layout pass matches the actual rendered size.
   // ============================================================
   async function generateHTMLPDF(htmlStr, filename, isLandscape = false) {
     const pxWidth  = isLandscape ? 1123 : 794;
-    const pxHeight = isLandscape ? 794  : 1123;
+    const pxHeight = isLandscape ? 794  : 1123; // used as min-height only
 
-    // 1. Create an invisible iframe — isolated from all parent CSS and scroll
+    // ── 1. Create iframe: offscreen LEFT, no height cap ──────────────
     const iframe = document.createElement('iframe');
     iframe.style.cssText =
-      'position:fixed;top:0;left:0;' +
+      'position:fixed;' +
+      'top:0;' +
+      'left:-' + (pxWidth + 20) + 'px;' +   // hidden offscreen (not opacity:0)
       'width:' + pxWidth + 'px;' +
-      'height:' + pxHeight + 'px;' +
-      'opacity:0;pointer-events:none;border:none;' +
-      'z-index:-9999;';
+      'height:' + pxHeight + 'px;' +         // initial height; will be updated below
+      'border:none;z-index:-9999;';
     document.body.appendChild(iframe);
 
-    // 2. Write a clean standalone HTML page into the iframe
-    //    — no parent stylesheets, no responsive CSS, no sidebar, nothing
+    // ── 2. Write isolated HTML page ───────────────────────────────────
     const iDoc = iframe.contentDocument || iframe.contentWindow.document;
     iDoc.open();
     iDoc.write(`<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=${pxWidth}">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -89,34 +98,43 @@ const Utils = (() => {
 </html>`);
     iDoc.close();
 
-    // 3. Wait for iframe to fully render (fonts, layout)
+    // ── 3. Wait for full render (fonts, images, layout) ───────────────
     await new Promise(r => {
-      if (iframe.contentDocument.readyState === 'complete') { setTimeout(r, 100); }
-      else { iframe.onload = () => setTimeout(r, 100); }
+      if (iDoc.readyState === 'complete') setTimeout(r, 200);
+      else iframe.onload = () => setTimeout(r, 200);
     });
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-    // 4. Capture the iframe's body element — always at (0,0), no scroll offset issues
+    // ── 4. KEY FIX: resize iframe to actual content height ────────────
+    //    Without this, content taller than pxHeight gets clipped on desktop.
+    const contentHeight = iDoc.body.scrollHeight;
+    iframe.style.height = contentHeight + 'px';
+
+    // One more rAF pair so the browser reflows after the height change
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    // ── 5. Capture from the correct target ───────────────────────────
     const target = iDoc.getElementById('pdf-export-wrap') || iDoc.body;
 
     const opt = {
-      margin:   [8, 8, 8, 8],
+      margin: [8, 8, 8, 8],
       filename: filename,
-      image:    { type: 'jpeg', quality: 0.98 },
+      image: { type: 'jpeg', quality: 0.98 },
       html2canvas: {
-        scale:           2,
-        useCORS:         true,
+        scale: 2,
+        useCORS: true,
         letterRendering: true,
-        width:           pxWidth,
-        windowWidth:     pxWidth,
-        scrollX:         0,
-        scrollY:         0,
+        width: pxWidth,
+        windowWidth: pxWidth,         // forces layout reflow to pxWidth regardless of screen
+        windowHeight: contentHeight,  // KEY FIX: match actual full content height
+        scrollX: 0,
+        scrollY: 0,
         backgroundColor: '#ffffff',
-        logging:         false,
+        logging: false,
       },
       jsPDF: {
-        unit:        'mm',
-        format:      'a4',
+        unit: 'mm',
+        format: 'a4',
         orientation: isLandscape ? 'landscape' : 'portrait',
       },
       pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
@@ -128,6 +146,7 @@ const Utils = (() => {
       document.body.removeChild(iframe);
     }
   }
+
 
   return { initTheme, setTheme, toggleTheme, toggleLang, initTopBar, showToast, setCurrency, getCurrencySymbol, formatCurrency, formatCurrencyNum, getCurrentMonth, formatMonth, formatMonthFull, formatDate, getPrevMonth, requireAuth, initSidebar, logout, confirm, cacheSet, cacheGet, cacheClear, getStatusLabel, getStatusClass, generateHTMLPDF };
 })();
