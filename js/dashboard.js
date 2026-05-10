@@ -1,5 +1,5 @@
 // ============================================================
-// RentUp v4 — Dashboard with 4 Charts, Filters, PDF Report
+// RentUp — Dashboard (programmatic jsPDF — no html2canvas)
 // ============================================================
 $(function () {
   if (!Utils.requireAuth()) return;
@@ -147,66 +147,103 @@ $(function () {
     });
   });
 
-  // ── Dashboard PDF Export ──────────────────────────────────────────
+  // ── Dashboard PDF — pure jsPDF programmatic (no html2canvas, no font rendering) ──
   $('#btn-dash-pdf').on('click', async function () {
     if (!dashData) return;
-    const sym = Utils.getCurrencySymbol();
-
-    // Capture live chart canvases as base64 images BEFORE generating PDF
-    let imagesHtml = '';
-    try {
-      ['chart-revenue', 'chart-rent', 'chart-elec', 'chart-gas'].forEach(id => {
-        const c = document.getElementById(id);
-        if (c) imagesHtml += `<img src="${c.toDataURL('image/png')}" style="width:48%;display:inline-block;vertical-align:top;margin:0 1% 8px 0;border-radius:6px;border:1px solid #eee;">`;
-      });
-    } catch (e) { console.warn('Chart capture failed:', e); }
-
-    let rowsHtml = '';
-    if (dashData.recent_bills && dashData.recent_bills.length) {
-      dashData.recent_bills.forEach(b => {
-        rowsHtml += `<tr>
-          <td style="padding:7px 8px;border:1px solid #ddd;">${b.tenant_name || '-'}</td>
-          <td style="padding:7px 8px;border:1px solid #ddd;">${b.room_name}</td>
-          <td style="padding:7px 8px;border:1px solid #ddd;">${b.property_name}</td>
-          <td style="padding:7px 8px;border:1px solid #ddd;">${Utils.formatMonth(b.month)}</td>
-          <td style="padding:7px 8px;border:1px solid #ddd;">${sym} ${Utils.formatCurrencyNum(b.total_amount)}</td>
-          <td style="padding:7px 8px;border:1px solid #ddd;">${Utils.getStatusLabel(b.is_paid)}</td>
-        </tr>`;
-      });
-    }
-
-    // Width = 794px (A4 portrait). Padding handles visual margins.
-    const html = `
-      <div id="pdf-export-wrap" style="font-family:Arial,Helvetica,sans-serif;padding:30px;width:794px;background:#fff;color:#333;letter-spacing:normal;word-spacing:normal;line-height:1.5;">
-        <h1 style="color:#6c5ce7;margin:0 0 4px 0;font-size:24px;font-weight:700;">RentUp</h1>
-        <h3 style="color:#555;margin:0 0 16px 0;font-size:13px;font-weight:400;">${t('dash_title')} — ${Utils.formatMonthFull(dashData.current_month)}</h3>
-        <table style="width:100%;margin-bottom:18px;font-size:13px;border-collapse:collapse;">
-          <tr><td style="padding:5px 0;width:45%;border-bottom:1px solid #eee;"><strong>${t('dash_properties')}:</strong></td><td style="padding:5px 0;border-bottom:1px solid #eee;">${dashData.total_properties}</td></tr>
-          <tr><td style="padding:5px 0;border-bottom:1px solid #eee;"><strong>${t('dash_rooms')}:</strong></td><td style="padding:5px 0;border-bottom:1px solid #eee;">${dashData.total_rooms}</td></tr>
-          <tr><td style="padding:5px 0;border-bottom:1px solid #eee;"><strong>${t('dash_monthly_revenue')}:</strong></td><td style="padding:5px 0;border-bottom:1px solid #eee;">${sym} ${Utils.formatCurrencyNum(dashData.monthly_revenue)}</td></tr>
-          <tr><td style="padding:5px 0;"><strong>${t('dash_unpaid_bills')}:</strong></td><td style="padding:5px 0;">${dashData.unpaid_count}</td></tr>
-        </table>
-        ${imagesHtml ? `<div style="margin-bottom:18px;font-size:0;">${imagesHtml}</div>` : ''}
-        ${rowsHtml ? `
-          <h4 style="color:#444;margin:0 0 8px 0;font-size:13px;">${t('dash_recent_bills')}</h4>
-          <table style="width:100%;border-collapse:collapse;font-size:11px;text-align:left;">
-            <thead>
-              <tr style="background:#6c5ce7;color:#fff;">
-                <th style="padding:7px 8px;border:1px solid #5a4ec9;">${t('th_tenant')}</th>
-                <th style="padding:7px 8px;border:1px solid #5a4ec9;">${t('th_room')}</th>
-                <th style="padding:7px 8px;border:1px solid #5a4ec9;">${t('th_property')}</th>
-                <th style="padding:7px 8px;border:1px solid #5a4ec9;">${t('th_month')}</th>
-                <th style="padding:7px 8px;border:1px solid #5a4ec9;">${t('th_total')}</th>
-                <th style="padding:7px 8px;border:1px solid #5a4ec9;">${t('th_status')}</th>
-              </tr>
-            </thead>
-            <tbody>${rowsHtml}</tbody>
-          </table>` : ''}
-      </div>`;
-
     Utils.showToast(t('loading') || 'Generating PDF...', 'info');
     try {
-      await Utils.generateHTMLPDF(html, 'RentUp_Dashboard_' + dashData.current_month + '.pdf');
+      const { jsPDF } = window.jspdf;
+      const sym = Utils.getCurrencySymbol();
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+      const W = doc.internal.pageSize.getWidth();   // 595.28 pt
+      const margin = 36;
+      let y = margin;
+
+      // ── Header ──
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(26);
+      doc.setTextColor(108, 92, 231);
+      doc.text('RentUp', margin, y);
+      y += 20;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11);
+      doc.setTextColor(80, 80, 80);
+      doc.text(t('dash_title') + ' \u2014 ' + Utils.formatMonthFull(dashData.current_month), margin, y);
+      y += 18;
+
+      // ── Divider ──
+      doc.setDrawColor(220, 220, 220);
+      doc.line(margin, y, W - margin, y);
+      y += 14;
+
+      // ── Stats rows ──
+      const stats = [
+        [t('dash_properties'), String(dashData.total_properties)],
+        [t('dash_rooms'), String(dashData.total_rooms)],
+        [t('dash_monthly_revenue'), sym + ' ' + Utils.formatCurrencyNum(dashData.monthly_revenue)],
+        [t('dash_unpaid_bills'), String(dashData.unpaid_count)],
+      ];
+      stats.forEach(([label, val]) => {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(50, 50, 50);
+        doc.text(label + ':', margin, y);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(80, 80, 80);
+        doc.text(val, margin + 160, y);
+        y += 16;
+        doc.setDrawColor(238, 238, 238);
+        doc.line(margin, y - 4, W - margin, y - 4);
+      });
+      y += 10;
+
+      // ── Chart images (captured from live canvas elements) ──
+      const chartIds = ['chart-revenue', 'chart-rent', 'chart-elec', 'chart-gas'];
+      const chartW = (W - margin * 2 - 10) / 2;  // two per row
+      const chartH = chartW * 0.55;
+      let cx = margin;
+      for (let i = 0; i < chartIds.length; i++) {
+        const canvas = document.getElementById(chartIds[i]);
+        if (canvas) {
+          if (y + chartH > doc.internal.pageSize.getHeight() - margin) { doc.addPage(); y = margin; }
+          const imgData = canvas.toDataURL('image/png');
+          doc.addImage(imgData, 'PNG', cx, y, chartW, chartH);
+          if (i % 2 === 0) { cx = margin + chartW + 10; }
+          else { cx = margin; y += chartH + 10; }
+        }
+      }
+      if (cx !== margin) y += chartH + 10; // flush last row if odd count
+      y += 8;
+
+      // ── Recent Bills table ──
+      if (dashData.recent_bills && dashData.recent_bills.length) {
+        if (y + 40 > doc.internal.pageSize.getHeight() - margin) { doc.addPage(); y = margin; }
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.setTextColor(50, 50, 50);
+        doc.text(t('dash_recent_bills'), margin, y);
+        y += 10;
+
+        doc.autoTable({
+          startY: y,
+          margin: { left: margin, right: margin },
+          head: [[t('th_tenant'), t('th_room'), t('th_property'), t('th_month'), t('th_total'), t('th_status')]],
+          body: (dashData.recent_bills || []).map(b => [
+            b.tenant_name || '-',
+            b.room_name,
+            b.property_name,
+            Utils.formatMonth(b.month),
+            sym + ' ' + Utils.formatCurrencyNum(b.total_amount),
+            Utils.getStatusLabel(b.is_paid),
+          ]),
+          headStyles: { fillColor: [108, 92, 231], textColor: 255, fontStyle: 'bold', fontSize: 9 },
+          bodyStyles: { fontSize: 9, textColor: [50, 50, 50] },
+          alternateRowStyles: { fillColor: [248, 247, 255] },
+          styles: { cellPadding: 5, font: 'helvetica', overflow: 'linebreak' },
+        });
+      }
+
+      doc.save('RentUp_Dashboard_' + (dashData.current_month || 'report') + '.pdf');
       Utils.showToast(t('bill_pdf_downloaded') || 'PDF downloaded!', 'success');
     } catch (e) {
       console.error('PDF error:', e);
