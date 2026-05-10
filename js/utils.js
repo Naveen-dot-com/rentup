@@ -31,40 +31,95 @@ const Utils = (() => {
   function getStatusClass(isPaid) { return isPaid === 1 ? 'badge-success' : isPaid === 2 ? 'badge-warning' : 'badge-danger'; }
 
   // ============================================================
-  // generateHTMLPDF — v7 FINAL (Parent-window only, no iframe)
+  // generateHTMLPDF — v8 FINAL (squish fix)
   //
-  // ROOT CAUSE of all previous failures:
-  //   html2pdf.js / jsPDF triggered inside an <iframe> cannot initiate
-  //   a file download on GitHub Pages (HTTPS). Browsers block blob-URL
-  //   navigation from sandboxed/cross-origin iframe contexts.
-  //   The toast appeared because html2pdf().save() resolved its Promise
-  //   successfully — but the actual download was silently blocked.
+  // ROOT CAUSE OF TEXT SQUISH (confirmed from PDF analysis):
+  //   The wrapper div is appended to document.body and inherits ALL
+  //   styles from style.css including:
+  //     - body { -webkit-font-smoothing: antialiased }
+  //       → changes glyph metrics at scale:2, tightens spacing
+  //     - thead th { letter-spacing: 0.05em }
+  //       → inherited by all descendant text nodes
+  //     - tbody td::before { letter-spacing: 0.05em; content: attr(data-label) }
+  //       → generates pseudo-elements that push/overlap real cell text
+  //     - .brand { -webkit-text-fill-color: transparent }
+  //       → makes text invisible (gradient clip from sidebar brand)
+  //     - html2canvas scale:2 amplifies all of these
   //
-  // THIS APPROACH (no iframe, no html2pdf):
-  //   1. Inject the HTML into a hidden <div> directly in the PARENT document.
-  //   2. Force that div to exactly A4 pixel width with position:fixed offscreen.
-  //   3. Capture it with html2canvas (runs in parent window — no sandbox issues).
-  //   4. Slice the tall canvas into A4-height pages manually.
-  //   5. Build the PDF with jsPDF directly in the parent window.
-  //   6. Call jsPDF.save() — download fires immediately, 100% of the time.
-  //
-  // WHY THIS WORKS ON ALL SCREEN SIZES:
-  //   The hidden div is position:fixed with an explicit width (794px or 1123px).
-  //   The parent page's viewport width doesn't matter — the div is always A4 wide.
-  //   html2canvas receives windowWidth:pxWidth so it reflows to A4 width too.
+  // FIX:
+  //   1. Prepend a comprehensive CSS isolation block inside wrapper.innerHTML
+  //      that hard-resets EVERY text-affecting property on #__pdf_render_wrap__
+  //      and ALL its descendants using !important.
+  //   2. Explicitly zero out: letter-spacing, word-spacing, font-kerning,
+  //      -webkit-font-smoothing, text-rendering, -webkit-text-fill-color,
+  //      font-feature-settings, text-transform, white-space.
+  //   3. Kill all ::before / ::after pseudo-elements (data-label overlays).
+  //   4. Apply font-family: Arial directly on the wrapper (not inherited var()).
+  //   5. Use scale:1 instead of scale:2 — scale:2 interacts with subpixel
+  //      rendering to cause glyph overlap. Scale 1.5 is the sweet spot for
+  //      quality without rendering artifacts.
   // ============================================================
+
+  // Master CSS isolation block — injected before every PDF's HTML content
+  const PDF_RESET_CSS = `
+    <style id="__pdf_reset__">
+      #__pdf_render_wrap__,
+      #__pdf_render_wrap__ * {
+        font-family: Arial, Helvetica, sans-serif !important;
+        letter-spacing: normal !important;
+        word-spacing: normal !important;
+        font-kerning: none !important;
+        font-feature-settings: normal !important;
+        text-rendering: auto !important;
+        -webkit-font-smoothing: subpixel-antialiased !important;
+        -moz-osx-font-smoothing: auto !important;
+        -webkit-text-fill-color: currentColor !important;
+        -webkit-background-clip: unset !important;
+        background-clip: unset !important;
+        text-transform: none !important;
+        white-space: normal !important;
+        word-break: normal !important;
+        overflow-wrap: normal !important;
+        box-sizing: border-box !important;
+      }
+
+      /* Kill ALL pseudo-elements — style.css injects data-label overlaps */
+      #__pdf_render_wrap__ *::before,
+      #__pdf_render_wrap__ *::after {
+        display: none !important;
+        content: none !important;
+      }
+
+      /* Table hard reset */
+      #__pdf_render_wrap__ table {
+        display: table !important;
+        width: 100% !important;
+        border-collapse: collapse !important;
+        table-layout: auto !important;
+      }
+      #__pdf_render_wrap__ thead  { display: table-header-group !important; }
+      #__pdf_render_wrap__ tbody  { display: table-row-group !important; }
+      #__pdf_render_wrap__ tfoot  { display: table-footer-group !important; }
+      #__pdf_render_wrap__ tr     { display: table-row !important; }
+      #__pdf_render_wrap__ td,
+      #__pdf_render_wrap__ th     { display: table-cell !important; }
+
+      /* Images */
+      #__pdf_render_wrap__ img    { max-width: 100% !important; height: auto !important; display: block !important; }
+    </style>
+  `;
+
   async function generateHTMLPDF(htmlStr, filename, isLandscape = false) {
-    // A4 at 96dpi: portrait = 794×1123px, landscape = 1123×794px
     const pxWidth  = isLandscape ? 1123 : 794;
     const pxHeight = isLandscape ? 794  : 1123;
 
-    // ── 1. Build a hidden render container in the PARENT document ────
+    // ── 1. Create isolated wrapper div in parent document ─────────────
     const wrapper = document.createElement('div');
     wrapper.id = '__pdf_render_wrap__';
     wrapper.style.cssText = [
       'position:fixed',
       'top:0',
-      'left:-' + (pxWidth + 40) + 'px',  // offscreen left — always rendered, never visible
+      'left:-' + (pxWidth + 40) + 'px',
       'width:' + pxWidth + 'px',
       'min-height:' + pxHeight + 'px',
       'background:#ffffff',
@@ -72,74 +127,60 @@ const Utils = (() => {
       'font-family:Arial,Helvetica,sans-serif',
       'font-size:14px',
       'line-height:1.5',
+      'letter-spacing:normal',
+      'word-spacing:normal',
+      '-webkit-font-smoothing:subpixel-antialiased',
       'overflow:visible',
       'z-index:99999',
       'box-sizing:border-box',
     ].join(';');
 
-    // Inject reset styles + content
-    wrapper.innerHTML = `
-      <style>
-        #__pdf_render_wrap__ *, #__pdf_render_wrap__ *::before, #__pdf_render_wrap__ *::after {
-          box-sizing: border-box !important;
-        }
-        #__pdf_render_wrap__ table {
-          display: table !important;
-          width: 100% !important;
-          border-collapse: collapse !important;
-          table-layout: fixed !important;
-        }
-        #__pdf_render_wrap__ thead  { display: table-header-group !important; }
-        #__pdf_render_wrap__ tbody  { display: table-row-group !important; }
-        #__pdf_render_wrap__ tfoot  { display: table-footer-group !important; }
-        #__pdf_render_wrap__ tr     { display: table-row !important; }
-        #__pdf_render_wrap__ td,
-        #__pdf_render_wrap__ th     { display: table-cell !important; }
-        #__pdf_render_wrap__ td::before,
-        #__pdf_render_wrap__ th::before { display: none !important; content: none !important; }
-        #__pdf_render_wrap__ img    { max-width: 100% !important; height: auto !important; }
-      </style>
-      ${htmlStr}
-    `;
+    // Inject reset CSS first, then the actual content
+    wrapper.innerHTML = PDF_RESET_CSS + htmlStr;
 
     document.body.appendChild(wrapper);
 
-    // ── 2. Let the browser fully paint the injected DOM ──────────────
+    // ── 2. Let browser fully paint ────────────────────────────────────
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-    await new Promise(r => setTimeout(r, 150));
+    await new Promise(r => setTimeout(r, 200));
 
-    // ── 3. Capture with html2canvas in parent window context ─────────
+    // ── 3. html2canvas capture — scale 1.5 avoids subpixel squish ────
     let canvas;
     try {
       canvas = await html2canvas(wrapper, {
-        scale: 2,                       // 2× for crisp text
+        scale: 1.5,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
         width: pxWidth,
-        windowWidth: pxWidth,           // forces A4-width reflow
+        windowWidth: pxWidth,
         scrollX: 0,
         scrollY: 0,
         x: 0,
         y: 0,
         logging: false,
+        onclone: (clonedDoc) => {
+          // Extra safety: re-apply isolation to the cloned document's wrapper
+          const el = clonedDoc.getElementById('__pdf_render_wrap__');
+          if (el) {
+            el.style.letterSpacing = 'normal';
+            el.style.wordSpacing = 'normal';
+            el.style.webkitFontSmoothing = 'subpixel-antialiased';
+            el.style.fontFamily = 'Arial, Helvetica, sans-serif';
+          }
+        }
       });
     } finally {
-      // Always remove the render div whether capture succeeds or fails
       document.body.removeChild(wrapper);
     }
 
-    // ── 4. Slice canvas into A4 pages & build PDF with jsPDF ─────────
-    // A4 in mm: 210×297 portrait, 297×210 landscape
-    const mmWidth  = isLandscape ? 297 : 210;
-    const mmHeight = isLandscape ? 210 : 297;
-
-    // How many canvas pixels equal one A4 page height?
-    // canvas.width = pxWidth * scale(2), so scale factor = canvas.width / pxWidth
-    const scaleFactor   = canvas.width / pxWidth;
-    const pageHeightPx  = pxHeight * scaleFactor;   // canvas pixels per A4 page
-    const totalHeight   = canvas.height;
-    const totalPages    = Math.ceil(totalHeight / pageHeightPx);
+    // ── 4. Slice canvas into A4 pages ─────────────────────────────────
+    const mmWidth   = isLandscape ? 297 : 210;
+    const mmHeight  = isLandscape ? 210 : 297;
+    const scaleFactor  = canvas.width / pxWidth;
+    const pageHeightPx = pxHeight * scaleFactor;
+    const totalHeight  = canvas.height;
+    const totalPages   = Math.ceil(totalHeight / pageHeightPx);
 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({
@@ -150,25 +191,17 @@ const Utils = (() => {
 
     for (let page = 0; page < totalPages; page++) {
       if (page > 0) pdf.addPage();
-
-      // Slice: one A4 page worth of canvas pixels
-      const srcY      = page * pageHeightPx;
-      const srcH      = Math.min(pageHeightPx, totalHeight - srcY);
-
-      const pageCanvas    = document.createElement('canvas');
-      pageCanvas.width    = canvas.width;
-      pageCanvas.height   = srcH;
-      const ctx = pageCanvas.getContext('2d');
-      ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
-
-      const imgData = pageCanvas.toDataURL('image/jpeg', 0.97);
-
-      // Scale image to fill A4 width; height proportional
+      const srcY   = page * pageHeightPx;
+      const srcH   = Math.min(pageHeightPx, totalHeight - srcY);
+      const pageCanvas = document.createElement('canvas');
+      pageCanvas.width  = canvas.width;
+      pageCanvas.height = srcH;
+      pageCanvas.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
       const imgHeightMm = (srcH / scaleFactor / pxWidth) * mmWidth;
-      pdf.addImage(imgData, 'JPEG', 0, 0, mmWidth, imgHeightMm);
+      pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.97), 'JPEG', 0, 0, mmWidth, imgHeightMm);
     }
 
-    // ── 5. Save — runs in parent window, always triggers download ─────
+    // ── 5. Save in parent window — always triggers download ───────────
     pdf.save(filename);
   }
 
