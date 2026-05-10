@@ -1,5 +1,5 @@
 // ============================================================
-// RentUp v7 P — Shared Utilities
+// RentUp — Shared Utilities
 // ============================================================
 const CURRENCY_SYMBOLS = { INR: '₹', PKR: '₨', USD: '$', EUR: '€', GBP: '£' };
 const Utils = (() => {
@@ -30,90 +30,5 @@ const Utils = (() => {
   function getStatusLabel(isPaid) { return isPaid === 1 ? t('status_paid') : isPaid === 2 ? t('status_partial') : t('status_unpaid'); }
   function getStatusClass(isPaid) { return isPaid === 1 ? 'badge-success' : isPaid === 2 ? 'badge-warning' : 'badge-danger'; }
 
-  async function generateHTMLPDF(htmlStr, filename, isLandscape = false) {
-    const pxWidth  = isLandscape ? 1123 : 794;
-    const pxHeight = isLandscape ? 794  : 1123;
-
-    // APPROACH: same-origin hidden iframe → zero CSS inheritance from style.css
-    // html2canvas runs in PARENT window targeting iframe.contentDocument.body
-    // jsPDF.save() runs in PARENT window → download always fires
-    const iframe = document.createElement('iframe');
-    iframe.style.cssText =
-      'position:fixed;top:0;left:-' + (pxWidth + 40) + 'px;' +
-      'width:' + pxWidth + 'px;height:' + pxHeight + 'px;' +
-      'border:none;z-index:99999;background:#fff;';
-    document.body.appendChild(iframe);
-
-    const iDoc = iframe.contentDocument;
-    iDoc.open();
-    iDoc.write('<!DOCTYPE html><html><head><meta charset="utf-8">' +
-      '<style>' +
-      'html,body{margin:0;padding:0;background:#fff;width:' + pxWidth + 'px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#333;letter-spacing:normal;word-spacing:normal;}' +
-      '*{box-sizing:border-box;letter-spacing:normal!important;word-spacing:normal!important;-webkit-text-fill-color:currentColor!important;-webkit-font-smoothing:subpixel-antialiased!important;}' +
-      'table{display:table!important;width:100%!important;border-collapse:collapse!important;table-layout:auto!important;}' +
-      'thead{display:table-header-group!important;}tbody{display:table-row-group!important;}tfoot{display:table-footer-group!important;}' +
-      'tr{display:table-row!important;}td,th{display:table-cell!important;}' +
-      'td::before,td::after,th::before,th::after{display:none!important;content:none!important;}' +
-      'img{max-width:100%;height:auto;display:inline-block;}' +
-      '</style></head><body>' + htmlStr + '</body></html>');
-    iDoc.close();
-
-    // Wait for iframe content to fully render
-    await new Promise(r => {
-      if (iDoc.readyState === 'complete') setTimeout(r, 300);
-      else iframe.onload = () => setTimeout(r, 300);
-    });
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-    // Resize iframe height to full content so nothing is clipped
-    const contentHeight = Math.max(iDoc.body.scrollHeight, pxHeight);
-    iframe.style.height = contentHeight + 'px';
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-    // html2canvas runs in PARENT window but targets the iframe's body
-    // Same-origin iframe body is fully accessible — no sandbox restrictions
-    let canvas;
-    try {
-      canvas = await html2canvas(iDoc.body, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: pxWidth,
-        windowWidth: pxWidth,
-        windowHeight: contentHeight,
-        scrollX: 0,
-        scrollY: 0,
-        logging: false,
-      });
-    } finally {
-      document.body.removeChild(iframe);
-    }
-
-    // Slice canvas into A4 pages and build PDF
-    const mmWidth  = isLandscape ? 297 : 210;
-    const scaleFactor  = canvas.width / pxWidth;
-    const pageHeightPx = pxHeight * scaleFactor;
-    const totalPages   = Math.ceil(canvas.height / pageHeightPx);
-
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: isLandscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
-
-    for (let page = 0; page < totalPages; page++) {
-      if (page > 0) pdf.addPage();
-      const srcY = page * pageHeightPx;
-      const srcH = Math.min(pageHeightPx, canvas.height - srcY);
-      const pc   = document.createElement('canvas');
-      pc.width   = canvas.width;
-      pc.height  = srcH;
-      pc.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
-      const imgHeightMm = (srcH / scaleFactor / pxWidth) * mmWidth;
-      pdf.addImage(pc.toDataURL('image/jpeg', 0.97), 'JPEG', 0, 0, mmWidth, imgHeightMm);
-    }
-
-    pdf.save(filename);
-  }
-
-
-  return { initTheme, setTheme, toggleTheme, toggleLang, initTopBar, showToast, setCurrency, getCurrencySymbol, formatCurrency, formatCurrencyNum, getCurrentMonth, formatMonth, formatMonthFull, formatDate, getPrevMonth, requireAuth, initSidebar, logout, confirm, cacheSet, cacheGet, cacheClear, getStatusLabel, getStatusClass, generateHTMLPDF };
+  return { initTheme, setTheme, toggleTheme, toggleLang, initTopBar, showToast, setCurrency, getCurrencySymbol, formatCurrency, formatCurrencyNum, getCurrentMonth, formatMonth, formatMonthFull, formatDate, getPrevMonth, requireAuth, initSidebar, logout, confirm, cacheSet, cacheGet, cacheClear, getStatusLabel, getStatusClass };
 })();
