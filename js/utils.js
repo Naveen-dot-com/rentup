@@ -30,5 +30,23 @@ const Utils = (() => {
   function getStatusLabel(isPaid) { return isPaid === 1 ? t('status_paid') : isPaid === 2 ? t('status_partial') : t('status_unpaid'); }
   function getStatusClass(isPaid) { return isPaid === 1 ? 'badge-success' : isPaid === 2 ? 'badge-warning' : 'badge-danger'; }
 
-  return { initTheme, setTheme, toggleTheme, toggleLang, initTopBar, showToast, setCurrency, getCurrencySymbol, formatCurrency, formatCurrencyNum, getCurrentMonth, formatMonth, formatMonthFull, formatDate, getPrevMonth, requireAuth, initSidebar, logout, confirm, cacheSet, cacheGet, cacheClear, getStatusLabel, getStatusClass };
+
+  // PDF-safe number formatter — toLocaleString('en-IN') produces non-breaking
+  // spaces that jsPDF Helvetica renders as gaps. Use plain comma formatting.
+  function pdfNum(amount) {
+    const n = parseFloat(amount || 0);
+    const parts = n.toFixed(n % 1 === 0 ? 0 : 2).split('.');
+    // Indian comma grouping: last 3 digits, then groups of 2
+    parts[0] = parts[0].replace(/(\d)(?=(\d\d)+(\d)(?!\d))/g, '$1,');
+    return parts.join('.');
+  }
+
+  // PDF-safe currency symbol — jsPDF Helvetica doesn't support ₹
+  // Map to ASCII equivalents for clean PDF rendering
+  function pdfSym() {
+    const map = { INR: 'Rs.', PKR: 'Rs.', USD: '$', EUR: 'EUR', GBP: 'GBP' };
+    return map[_currency] || _currency;
+  }
+
+  return { initTheme, setTheme, toggleTheme, toggleLang, initTopBar, showToast, setCurrency, getCurrencySymbol, formatCurrency, formatCurrencyNum, getCurrentMonth, formatMonth, formatMonthFull, formatDate, getPrevMonth, requireAuth, initSidebar, logout, confirm, cacheSet, cacheGet, cacheClear, getStatusLabel, getStatusClass, pdfNum, pdfSym };
 })();
