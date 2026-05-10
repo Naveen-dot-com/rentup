@@ -208,11 +208,11 @@ $(function () {
         margin: { left: margin, right: margin },
         head: [[t('pdf_item'), t('pdf_details'), t('pdf_amount')]],
         body: [
-          [t('pdf_rent'),        t('pdf_rent_detail',  { month: curML }),                                   sym + ' ' + bill.rent_amount.toLocaleString()],
-          [t('pdf_electricity'), t('pdf_elec_detail',  { units: bill.electricity_units, rate: bill.electricity_rate, month: prevML }), sym + ' ' + bill.electricity_amount.toLocaleString()],
-          [t('th_gas'),          t('th_gas_units') + ': ' + (bill.gas_units || 0),                          sym + ' ' + bill.gas_amount.toLocaleString()],
+          [t('pdf_rent'),        t('pdf_rent_detail',  { month: curML }),                                   sym + ' ' + Utils.pdfNum(bill.rent_amount)],
+          [t('pdf_electricity'), t('pdf_elec_detail',  { units: bill.electricity_units, rate: bill.electricity_rate, month: prevML }), sym + ' ' + Utils.pdfNum(bill.electricity_amount)],
+          [t('th_gas'),          t('th_gas_units') + ': ' + (bill.gas_units || 0),                          sym + ' ' + Utils.pdfNum(bill.gas_amount)],
         ],
-        foot: [[{ content: t('pdf_total'), colSpan: 2, styles: { fontStyle: 'bold' } }, sym + ' ' + bill.total_amount.toLocaleString()]],
+        foot: [[{ content: t('pdf_total'), colSpan: 2, styles: { fontStyle: 'bold' } }, sym + ' ' + Utils.pdfNum(bill.total_amount)]],
         headStyles:  { fillColor: [108, 92, 231], textColor: 255, fontStyle: 'bold', fontSize: 10 },
         bodyStyles:  { fontSize: 10, textColor: [50, 50, 50] },
         footStyles:  { fillColor: [240, 240, 250], fontStyle: 'bold', fontSize: 11, textColor: [50, 50, 50] },
@@ -252,7 +252,7 @@ $(function () {
     Utils.showToast(t('loading') || 'Generating PDF...', 'info');
     try {
       const { jsPDF } = window.jspdf;
-      const sym   = Utils.getCurrencySymbol();
+      const sym   = Utils.pdfSym();
       const total = currentBills.reduce((s, b) => s + b.total_amount, 0);
       const doc   = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
       const W     = doc.internal.pageSize.getWidth();
@@ -265,7 +265,7 @@ $(function () {
       doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(60, 60, 60);
       doc.text(t('bill_consolidated_title'), margin, y); y += 16;
       doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(80, 80, 80);
-      doc.text(t('th_total') + ': ' + sym + ' ' + total.toLocaleString('en-IN'), margin, y); y += 18;
+      doc.text(t('th_total') + ': ' + sym + ' ' + Utils.pdfNum(total), margin, y); y += 18;
       doc.setDrawColor(200, 200, 200); doc.line(margin, y, W - margin, y); y += 12;
 
       doc.autoTable({
@@ -281,12 +281,12 @@ $(function () {
           b.room_name,
           b.property_name,
           Utils.formatMonth(b.month),
-          sym + ' ' + b.rent_amount.toLocaleString('en-IN'),
+          sym + ' ' + Utils.pdfNum(b.rent_amount),
           b.electricity_units,
-          sym + ' ' + b.electricity_amount.toLocaleString('en-IN'),
+          sym + ' ' + Utils.pdfNum(b.electricity_amount),
           b.gas_units || 0,
-          sym + ' ' + b.gas_amount.toLocaleString('en-IN'),
-          sym + ' ' + b.total_amount.toLocaleString('en-IN'),
+          sym + ' ' + Utils.pdfNum(b.gas_amount),
+          sym + ' ' + Utils.pdfNum(b.total_amount),
           Utils.getStatusLabel(b.is_paid),
         ]),
         headStyles: { fillColor: [108, 92, 231], textColor: 255, fontStyle: 'bold', fontSize: 8 },
