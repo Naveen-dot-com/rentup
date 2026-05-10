@@ -153,7 +153,7 @@ $(function () {
     Utils.showToast(t('loading') || 'Generating PDF...', 'info');
     try {
       const { jsPDF } = window.jspdf;
-      const sym = Utils.getCurrencySymbol();
+      const sym = Utils.pdfSym();
       const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
       const W = doc.internal.pageSize.getWidth();   // 595.28 pt
       const margin = 36;
@@ -180,7 +180,7 @@ $(function () {
       const stats = [
         [t('dash_properties'), String(dashData.total_properties)],
         [t('dash_rooms'), String(dashData.total_rooms)],
-        [t('dash_monthly_revenue'), sym + ' ' + Utils.formatCurrencyNum(dashData.monthly_revenue)],
+        [t('dash_monthly_revenue'), sym + ' ' + Utils.pdfNum(dashData.monthly_revenue)],
         [t('dash_unpaid_bills'), String(dashData.unpaid_count)],
       ];
       stats.forEach(([label, val]) => {
@@ -233,7 +233,7 @@ $(function () {
             b.room_name,
             b.property_name,
             Utils.formatMonth(b.month),
-            sym + ' ' + Utils.formatCurrencyNum(b.total_amount),
+            sym + ' ' + Utils.pdfNum(b.total_amount),
             Utils.getStatusLabel(b.is_paid),
           ]),
           headStyles: { fillColor: [108, 92, 231], textColor: 255, fontStyle: 'bold', fontSize: 9 },
