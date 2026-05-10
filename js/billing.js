@@ -216,7 +216,7 @@ $(function () {
         headStyles:  { fillColor: [108, 92, 231], textColor: 255, fontStyle: 'bold', fontSize: 10 },
         bodyStyles:  { fontSize: 10, textColor: [50, 50, 50] },
         footStyles:  { fillColor: [240, 240, 250], fontStyle: 'bold', fontSize: 11, textColor: [50, 50, 50] },
-        columnStyles: { 2: { halign: 'right' } },
+        columnStyles: { 2: { halign: 'center' } },
         styles: { cellPadding: 6, font: 'helvetica', overflow: 'linebreak' },
       });
 
