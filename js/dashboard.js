@@ -9,7 +9,6 @@ $(function () {
   let dashData = null, allBills = [];
   let charts = {};
 
-  // Populate filter dropdowns
   const curYear = new Date().getFullYear();
   for (let y = curYear; y >= curYear - 5; y--) $('#chart-year').append(`<option value="${y}">${y}</option>`);
   $('#chart-year').prepend('<option value="">All Years</option>');
@@ -79,7 +78,6 @@ $(function () {
     const textColor = isDark ? '#9c9cb5' : '#555577';
     const commonOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: textColor, font: { family: 'Inter', size: 11 } } } }, scales: { x: { grid: { display: false }, ticks: { color: textColor, font: { size: 10 } } }, y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 10 } } } } };
 
-    // 1. Revenue Stacked Bar
     if (charts.revenue) charts.revenue.destroy();
     charts.revenue = new Chart(document.getElementById('chart-revenue'), {
       type: 'bar', data: { labels, datasets: [
@@ -89,7 +87,6 @@ $(function () {
       ] }, options: { ...commonOpts, plugins: { ...commonOpts.plugins, tooltip: { mode: 'index', intersect: false } }, scales: { ...commonOpts.scales, x: { ...commonOpts.scales.x, stacked: true }, y: { ...commonOpts.scales.y, stacked: true } } }
     });
 
-    // 2. Rent Collection Line (Curved + Fill)
     if (charts.rent) charts.rent.destroy();
     const ctxRent = document.getElementById('chart-rent').getContext('2d');
     const gradRent = ctxRent.createLinearGradient(0, 0, 0, 400);
@@ -98,20 +95,17 @@ $(function () {
       type: 'line', data: { labels, datasets: [{ label: t('chart_rent'), data: data.map(d => d.rent), borderColor: '#6c5ce7', backgroundColor: gradRent, borderWidth: 3, tension: 0.4, fill: true, pointRadius: 4, pointBackgroundColor: '#fff', pointBorderColor: '#6c5ce7', pointBorderWidth: 2 }] }, options: commonOpts
     });
 
-    // 3. Electricity Consumption (Units)
     if (charts.elec) charts.elec.destroy();
     charts.elec = new Chart(document.getElementById('chart-elec'), {
       type: 'bar', data: { labels, datasets: [{ label: 'Units', data: data.map(d => d.elec_units), backgroundColor: '#00cec9', borderRadius: 4, barPercentage: 0.6 }] }, options: commonOpts
     });
 
-    // 4. Gas Collection (Amount)
     if (charts.gas) charts.gas.destroy();
     charts.gas = new Chart(document.getElementById('chart-gas'), {
       type: 'bar', data: { labels, datasets: [{ label: t('chart_gas'), data: data.map(d => d.gas), backgroundColor: '#fdcb6e', borderRadius: 4, barPercentage: 0.6 }] }, options: commonOpts
     });
   }
 
-  // Chart filter changes & Reset
   $('#chart-year, #chart-property, #chart-room').on('change', renderCharts);
   $('#btn-reset-charts').on('click', function() {
     $('#chart-year').val(''); $('#chart-property').val(''); $('#chart-room').val('');
@@ -131,7 +125,6 @@ $(function () {
     </tr>`).join(''));
   }
 
-  // Recent table sorting & search
   let rSortCol = 'month', rSortDir = -1;
   $('#recent-table thead th[data-sort]').on('click', function () {
     const col = $(this).data('sort');
@@ -159,14 +152,12 @@ $(function () {
     if (!dashData) return;
     const sym = Utils.getCurrencySymbol();
 
-    // Capture live charts as base64 PNG images before PDF generation
+    // Capture live chart canvases as base64 images BEFORE generating PDF
     let imagesHtml = '';
     try {
       ['chart-revenue', 'chart-rent', 'chart-elec', 'chart-gas'].forEach(id => {
-        const canvas = document.getElementById(id);
-        if (canvas) {
-          imagesHtml += `<img src="${canvas.toDataURL('image/png')}" style="width:49%;display:inline-block;vertical-align:top;margin:0 0.5% 8px;border-radius:6px;border:1px solid #eee;">`;
-        }
+        const c = document.getElementById(id);
+        if (c) imagesHtml += `<img src="${c.toDataURL('image/png')}" style="width:48%;display:inline-block;vertical-align:top;margin:0 1% 8px 0;border-radius:6px;border:1px solid #eee;">`;
       });
     } catch (e) { console.warn('Chart capture failed:', e); }
 
@@ -184,23 +175,18 @@ $(function () {
       });
     }
 
-    // NOTE: All page margins are handled by padding on #pdf-export-wrap
-    // (30px). Do NOT add margin in Utils.generateHTMLPDF — html2pdf v0.10.1
-    // throws "Invalid margin array" for anything except a plain number 0.
+    // Width = 794px (A4 portrait). Padding handles visual margins.
     const html = `
-      <div id="pdf-export-wrap" style="font-family:Arial,Helvetica,sans-serif;padding:30px;color:#333;width:734px;background:#fff;">
-        <h1 style="color:#6c5ce7;margin:0 0 4px 0;font-size:26px;font-weight:700;">RentUp</h1>
-        <h3 style="color:#555;margin:0 0 18px 0;font-size:14px;font-weight:400;">${t('dash_title')} — ${Utils.formatMonthFull(dashData.current_month)}</h3>
-
-        <table style="width:100%;margin-bottom:20px;font-size:13px;border-collapse:collapse;">
+      <div id="pdf-export-wrap" style="font-family:Arial,Helvetica,sans-serif;padding:30px;width:794px;background:#fff;color:#333;">
+        <h1 style="color:#6c5ce7;margin:0 0 4px 0;font-size:24px;font-weight:700;">RentUp</h1>
+        <h3 style="color:#555;margin:0 0 16px 0;font-size:13px;font-weight:400;">${t('dash_title')} — ${Utils.formatMonthFull(dashData.current_month)}</h3>
+        <table style="width:100%;margin-bottom:18px;font-size:13px;border-collapse:collapse;">
           <tr><td style="padding:5px 0;width:45%;border-bottom:1px solid #eee;"><strong>${t('dash_properties')}:</strong></td><td style="padding:5px 0;border-bottom:1px solid #eee;">${dashData.total_properties}</td></tr>
           <tr><td style="padding:5px 0;border-bottom:1px solid #eee;"><strong>${t('dash_rooms')}:</strong></td><td style="padding:5px 0;border-bottom:1px solid #eee;">${dashData.total_rooms}</td></tr>
           <tr><td style="padding:5px 0;border-bottom:1px solid #eee;"><strong>${t('dash_monthly_revenue')}:</strong></td><td style="padding:5px 0;border-bottom:1px solid #eee;">${sym} ${Utils.formatCurrencyNum(dashData.monthly_revenue)}</td></tr>
           <tr><td style="padding:5px 0;"><strong>${t('dash_unpaid_bills')}:</strong></td><td style="padding:5px 0;">${dashData.unpaid_count}</td></tr>
         </table>
-
-        ${imagesHtml ? `<div style="margin-bottom:18px;font-size:0;line-height:0;">${imagesHtml}</div>` : ''}
-
+        ${imagesHtml ? `<div style="margin-bottom:18px;font-size:0;">${imagesHtml}</div>` : ''}
         ${rowsHtml ? `
           <h4 style="color:#444;margin:0 0 8px 0;font-size:13px;">${t('dash_recent_bills')}</h4>
           <table style="width:100%;border-collapse:collapse;font-size:11px;text-align:left;">
@@ -223,8 +209,8 @@ $(function () {
       await Utils.generateHTMLPDF(html, 'RentUp_Dashboard_' + dashData.current_month + '.pdf');
       Utils.showToast(t('bill_pdf_downloaded') || 'PDF downloaded!', 'success');
     } catch (e) {
-      console.error('PDF generation failed:', e);
-      Utils.showToast('PDF generation failed: ' + e.message, 'error');
+      console.error('PDF error:', e);
+      Utils.showToast('PDF failed: ' + e.message, 'error');
     }
   });
 
