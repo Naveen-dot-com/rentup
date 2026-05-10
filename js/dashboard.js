@@ -177,7 +177,7 @@ $(function () {
 
     // Width = 794px (A4 portrait). Padding handles visual margins.
     const html = `
-      <div id="pdf-export-wrap" style="font-family:Arial,Helvetica,sans-serif;padding:30px;width:794px;background:#fff;color:#333;">
+      <div id="pdf-export-wrap" style="font-family:Arial,Helvetica,sans-serif;padding:30px;width:794px;background:#fff;color:#333;letter-spacing:normal;word-spacing:normal;line-height:1.5;">
         <h1 style="color:#6c5ce7;margin:0 0 4px 0;font-size:24px;font-weight:700;">RentUp</h1>
         <h3 style="color:#555;margin:0 0 16px 0;font-size:13px;font-weight:400;">${t('dash_title')} — ${Utils.formatMonthFull(dashData.current_month)}</h3>
         <table style="width:100%;margin-bottom:18px;font-size:13px;border-collapse:collapse;">
