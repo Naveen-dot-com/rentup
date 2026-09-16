@@ -128,11 +128,41 @@ if (
   ctx.textBaseline = 'bottom';
   ctx.fillText(label, element.x, top - 6);
 }
-else if (height >= 20) {
-  // Stacked bar: keep value inside the bar
+// else if (height >= 20) {
+//   // Stacked bar: keep value inside the bar
+//   ctx.fillStyle = '#ffffff';
+//   ctx.textBaseline = 'middle';
+//   ctx.fillText(label, element.x, (top + bottom) / 2);
+// } else {
+//   ctx.fillStyle = textColor;
+//   ctx.textBaseline = 'bottom';
+//   ctx.fillText(label, element.x, top - 4);
+// }
+
+    else if (height >= 20) {
   ctx.fillStyle = '#ffffff';
   ctx.textBaseline = 'middle';
   ctx.fillText(label, element.x, (top + bottom) / 2);
+} else if (
+  chart.canvas.id === 'chart-revenue' &&
+  window.innerWidth <= 768
+) {
+  // On mobile, move small stacked-segment labels above the stack
+  // so Electricity/Gas values don't collide.
+  const metas = chart.getSortedVisibleDatasetMetas();
+
+  const stackTop = Math.min(
+    ...metas
+      .map(meta => meta.data[index]?.y)
+      .filter(y => typeof y === 'number')
+  );
+
+  const offset =
+    datasetIndex === chart.data.datasets.length - 1 ? 6 : 18;
+
+  ctx.fillStyle = textColor;
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(label, element.x, stackTop - offset);
 } else {
   ctx.fillStyle = textColor;
   ctx.textBaseline = 'bottom';
