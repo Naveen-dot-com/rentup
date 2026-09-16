@@ -154,5 +154,6 @@ $(function () {
     } catch (e) { Utils.showToast(e.message, 'error'); }
   });
 
-  loadProperties().then(loadRooms);
+ // loadProperties().then(loadRooms);
+  Promise.all([loadProperties(), loadRooms()]);
 });
