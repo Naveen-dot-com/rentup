@@ -6,7 +6,7 @@ $(function () {
   if (!Utils.requireAuth()) return;
   Utils.initTheme(); Utils.initSidebar('billing'); Utils.initTopBar(); lucide.createIcons();
   $('[data-i18n]').each(function () { $(this).text(t($(this).data('i18n'))); });
-  let allProperties = [], allRooms = [], currentBills = [], sortCol = 'month', sortDir = -1;
+  let allProperties = [], allRooms = [], currentBills = [], sortCol = 'id', sortDir = -1;
 
   // Populate year filter
   const curYear = new Date().getFullYear();
@@ -119,6 +119,7 @@ $(function () {
       const prevBill = prevBills.find(b => String(b.room_id) === String(roomId));
       if (prevBill) {
         $('#bill-elec-prev').val(prevBill.elec_reading || 0);
+        $('#bill-rent').val(prevBill.rent_amount || '');
       } else {
         $('#bill-elec-prev').val('');
       }
