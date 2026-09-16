@@ -85,14 +85,6 @@ $(function () {
     ctx.font = '600 9px Inter, sans-serif';
     //ctx.textAlign = 'center';
   const area = chart.chartArea;
-
-if (element.x <= area.left + 20) {
-  ctx.textAlign = 'left';
-} else if (element.x >= area.right - 20) {
-  ctx.textAlign = 'right';
-} else {
-  ctx.textAlign = 'center';
-}
     
 
     chart.data.datasets.forEach((dataset, datasetIndex) => {
@@ -103,6 +95,15 @@ if (element.x <= area.left + 20) {
         const value = dataset.data[index];
 
         if (value === null || value === undefined || Number(value) === 0) return;
+         const area = chart.chartArea;
+
+  if (element.x <= area.left + 20) {
+    ctx.textAlign = 'left';
+  } else if (element.x >= area.right - 20) {
+    ctx.textAlign = 'right';
+  } else {
+    ctx.textAlign = 'center';
+  }
 
         const label = isCurrency
           ? Utils.getCurrencySymbol() + ' ' + Utils.formatCurrencyNum(value)
