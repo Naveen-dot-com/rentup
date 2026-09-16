@@ -143,11 +143,30 @@ if (
   ctx.fillStyle = '#ffffff';
   ctx.textBaseline = 'middle';
   ctx.fillText(label, element.x, (top + bottom) / 2);
-} else if (
-  chart.canvas.id === 'chart-revenue' &&
-  window.innerWidth <= 768
-) {
-  // On mobile, move small stacked-segment labels above the stack
+// } else if (
+//   chart.canvas.id === 'chart-revenue' &&
+//   window.innerWidth <= 768
+// ) {
+//   // On mobile, move small stacked-segment labels above the stack
+//   // so Electricity/Gas values don't collide.
+//   const metas = chart.getSortedVisibleDatasetMetas();
+
+//   const stackTop = Math.min(
+//     ...metas
+//       .map(meta => meta.data[index]?.y)
+//       .filter(y => typeof y === 'number')
+//   );
+
+//   const offset =
+//     datasetIndex === chart.data.datasets.length - 1 ? 6 : 18;
+
+//   ctx.fillStyle = textColor;
+//   ctx.textBaseline = 'bottom';
+//   ctx.fillText(label, element.x, stackTop - offset);
+// } else {
+
+  } else if (chart.canvas.id === 'chart-revenue') {
+  // Move small stacked-segment labels above the stack
   // so Electricity/Gas values don't collide.
   const metas = chart.getSortedVisibleDatasetMetas();
 
@@ -158,7 +177,7 @@ if (
   );
 
   const offset =
-    datasetIndex === chart.data.datasets.length - 1 ? 6 : 18;
+    datasetIndex === chart.data.datasets.length - 1 ? 6 : 20;
 
   ctx.fillStyle = textColor;
   ctx.textBaseline = 'bottom';
