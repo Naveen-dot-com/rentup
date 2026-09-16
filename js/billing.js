@@ -94,8 +94,25 @@ $(function () {
 
   $('#bill-property').on('change', function () { const pid = $(this).val(); const rs = $('#bill-room'); rs.find('option:not(:first)').remove(); if (!pid) return; allRooms.filter(r => String(r.property_id) === String(pid)).forEach(r => rs.append(`<option value="${r.id}">${r.name}${r.tenant_name ? ' (' + r.tenant_name + ')' : ''}</option>`)); });
   $('#filter-year, #filter-month-num, #filter-property').on('change', loadBills);
-  $('#btn-add-bill').on('click', function () { $('#bill-id').val(''); $('#bill-modal-title').text(t('bill_new_title')); $('#bill-form')[0].reset(); $('#bill-month').val(Utils.getCurrentMonth()); $('#bill-room').find('option:not(:first)').remove(); $('#bill-modal').addClass('active'); });
+ // $('#btn-add-bill').on('click', function () { $('#bill-id').val(''); $('#bill-modal-title').text(t('bill_new_title')); $('#bill-form')[0].reset(); $('#bill-month').val(Utils.getCurrentMonth()); $('#bill-room').find('option:not(:first)').remove(); $('#bill-modal').addClass('active'); });
+$('#btn-add-bill').on('click', function () {
+  $('#bill-id').val('');
+  $('#bill-modal-title').text(t('bill_new_title'));
+  $('#bill-form')[0].reset();
+  $('#bill-month').val(Utils.getCurrentMonth());
 
+  // Default property for new bills
+  const defaultProperty = allProperties.find(
+    p => String(p.name).trim().toLowerCase() === 'varanasi'
+  );
+
+  if (defaultProperty) {
+    $('#bill-property').val(defaultProperty.id).trigger('change');
+  }
+
+  $('#bill-modal').addClass('active');
+});
+  
   window.editBill = function (id) {
     const b = currentBills.find(x => x.id === id); if (!b) return;
     $('#bill-id').val(b.id); $('#bill-modal-title').text(t('bill_edit_title'));
