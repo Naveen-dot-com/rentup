@@ -81,8 +81,19 @@ $(function () {
       : '#555577';
 
     ctx.save();
-    ctx.font = '600 10px Inter, sans-serif';
-    ctx.textAlign = 'center';
+   // ctx.font = '600 10px Inter, sans-serif';
+    ctx.font = '600 9px Inter, sans-serif';
+    //ctx.textAlign = 'center';
+  const area = chart.chartArea;
+
+if (element.x <= area.left + 20) {
+  ctx.textAlign = 'left';
+} else if (element.x >= area.right - 20) {
+  ctx.textAlign = 'right';
+} else {
+  ctx.textAlign = 'center';
+}
+    
 
     chart.data.datasets.forEach((dataset, datasetIndex) => {
       const meta = chart.getDatasetMeta(datasetIndex);
@@ -141,7 +152,8 @@ Chart.register(valueLabelsPlugin);
     const bills = getFilteredBills();
     const data = aggregateByMonth(bills);
     const labels = data.map(d => Utils.formatMonth(d.month));
-const visibleMonths = 3;
+
+    const visibleMonths = 3;
 
 document.querySelectorAll('.chart-scroll').forEach(scroll => {
   const width = scroll.clientWidth;
@@ -153,6 +165,7 @@ document.querySelectorAll('.chart-scroll').forEach(scroll => {
   const inner = scroll.querySelector('.chart-scroll-inner');
   if (inner) inner.style.width = `${chartWidth}px`;
 });
+    
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
     const textColor = isDark ? '#9c9cb5' : '#555577';
@@ -177,20 +190,52 @@ document.querySelectorAll('.chart-scroll').forEach(scroll => {
 
     if (charts.elec) charts.elec.destroy();
     charts.elec = new Chart(document.getElementById('chart-elec'), {
-      type: 'bar', data: { labels, datasets: [{ label: 'Units', data: data.map(d => d.elec_units), backgroundColor: '#00cec9', borderRadius: 4, barPercentage: 0.6 }] }, options: commonOpts
+      type: 'bar', data: { labels, datasets: [{ label: 'Units', data: data.map(d => d.elec_units), backgroundColor: '#00cec9', borderRadius: 4, barPercentage: 0.5 }] }, options: {
+  ...commonOpts,
+  scales: {
+    ...commonOpts.scales,
+    x: {
+      ...commonOpts.scales.x,
+      offset: true
+    },
+    y: {
+      ...commonOpts.scales.y,
+      grace: '8%'
+    }
+  }
+}
     });
 
     if (charts.gas) charts.gas.destroy();
     charts.gas = new Chart(document.getElementById('chart-gas'), {
-      type: 'bar', data: { labels, datasets: [{ label: t('chart_gas'), data: data.map(d => d.gas), backgroundColor: '#fdcb6e', borderRadius: 4, barPercentage: 0.6 }] }, options: commonOpts
+      type: 'bar', data: { labels, datasets: [{ label: t('chart_gas'), data: data.map(d => d.gas), backgroundColor: '#fdcb6e', borderRadius: 4, barPercentage: 0.5 }] }, options: {
+  ...commonOpts,
+  scales: {
+    ...commonOpts.scales,
+    x: {
+      ...commonOpts.scales.x,
+      offset: true
+    },
+    y: {
+      ...commonOpts.scales.y,
+      grace: '8%'
+    }
+  }
+}
     });
   }
+  requestAnimationFrame(() => {
+  document.querySelectorAll('.chart-scroll').forEach(scroll => {
+    scroll.scrollLeft = scroll.scrollWidth - scroll.clientWidth;
+  });
+});
 
   $('#chart-year, #chart-property, #chart-room').on('change', renderCharts);
   $('#btn-reset-charts').on('click', function() {
     $('#chart-year').val(''); $('#chart-property').val(''); $('#chart-room').val('');
     renderCharts();
   });
+  
 
   function renderRecentBills(bills) {
     const body = $('#recent-body');
