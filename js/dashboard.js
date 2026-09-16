@@ -223,13 +223,13 @@ document.querySelectorAll('.chart-scroll').forEach(scroll => {
   }
 }
     });
-  }
+  
   requestAnimationFrame(() => {
   document.querySelectorAll('.chart-scroll').forEach(scroll => {
     scroll.scrollLeft = scroll.scrollWidth - scroll.clientWidth;
   });
 });
-
+  }
   $('#chart-year, #chart-property, #chart-room').on('change', renderCharts);
   $('#btn-reset-charts').on('click', function() {
     $('#chart-year').val(''); $('#chart-property').val(''); $('#chart-room').val('');
