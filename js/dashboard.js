@@ -131,6 +131,11 @@ Chart.register(valueLabelsPlugin);
     const bills = getFilteredBills();
     const data = aggregateByMonth(bills);
     const labels = data.map(d => Utils.formatMonth(d.month));
+    const chartWidth = Math.max(labels.length * 90, 0);
+
+document.querySelectorAll('.chart-scroll-inner').forEach(el => {
+  el.style.width = `${chartWidth}px`;
+});
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
     const textColor = isDark ? '#9c9cb5' : '#555577';
