@@ -314,6 +314,7 @@ $(function () {
     XLSX.writeFile(wb, 'RentUp_All_Bills.xlsx'); Utils.showToast(t('bill_excel_downloaded'), 'success');
   });
 
-  async function init() { await loadSettings(); await Promise.all([loadProperties(), loadRooms()]); loadBills(); }
+  //async function init() { await loadSettings(); await Promise.all([loadProperties(), loadRooms()]); loadBills(); }
+  async function init() { await Promise.all([loadSettings(), loadProperties(), loadRooms(), loadBills()]); }
   init();
 });
