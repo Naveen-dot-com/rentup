@@ -69,6 +69,64 @@ $(function () {
     return Object.keys(map).sort().map(m => ({ month: m, ...map[m] }));
   }
 
+  // This is for chart values show on bars/lines. This change is till line number 127 (Chart.register(valueLabelsPlugin);)
+  const valueLabelsPlugin = {
+  id: 'valueLabels',
+
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart;
+    const isCurrency = chart.canvas.id !== 'chart-elec';
+    const textColor = document.documentElement.getAttribute('data-theme') === 'dark'
+      ? '#f0f0f5'
+      : '#555577';
+
+    ctx.save();
+    ctx.font = '600 10px Inter, sans-serif';
+    ctx.textAlign = 'center';
+
+    chart.data.datasets.forEach((dataset, datasetIndex) => {
+      const meta = chart.getDatasetMeta(datasetIndex);
+      if (meta.hidden) return;
+
+      meta.data.forEach((element, index) => {
+        const value = dataset.data[index];
+
+        if (value === null || value === undefined || Number(value) === 0) return;
+
+        const label = isCurrency
+          ? Utils.getCurrencySymbol() + ' ' + Utils.formatCurrencyNum(value)
+          : Utils.formatCurrencyNum(value);
+
+        if (chart.config.type === 'line') {
+          ctx.fillStyle = textColor;
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(label, element.x, element.y - 8);
+          return;
+        }
+
+        const top = Math.min(element.y, element.base);
+        const bottom = Math.max(element.y, element.base);
+        const height = bottom - top;
+
+        if (height >= 20) {
+          ctx.fillStyle = '#ffffff';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(label, element.x, (top + bottom) / 2);
+        } else {
+          ctx.fillStyle = textColor;
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(label, element.x, top - 4);
+        }
+      });
+    });
+
+    ctx.restore();
+  }
+};
+
+Chart.register(valueLabelsPlugin);
+  
+
   function renderCharts() {
     const bills = getFilteredBills();
     const data = aggregateByMonth(bills);
