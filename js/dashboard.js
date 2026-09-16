@@ -84,7 +84,6 @@ $(function () {
    // ctx.font = '600 10px Inter, sans-serif';
     ctx.font = '600 9px Inter, sans-serif';
     //ctx.textAlign = 'center';
-  const area = chart.chartArea;
     
 
     chart.data.datasets.forEach((dataset, datasetIndex) => {
