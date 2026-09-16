@@ -252,6 +252,9 @@ $(function () {
   });
 
   //async function init() { await loadSettings(); await loadFilters(); await Promise.all([loadDashboard(), loadAllBills()]); }
-  async function init() { await Promise.all([loadSettings(), loadFilters(), loadDashboard(), loadAllBills()]); }
-  init();
+  async function init() {
+  await loadDashboard();
+  Promise.all([loadSettings(), loadFilters(), loadAllBills()]);
+}
+init();
 });
