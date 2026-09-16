@@ -321,9 +321,52 @@ textarea.form-control{resize:vertical;min-height:80px}
 }
 
 /* Charts */
-.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+/*.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
 .chart-card{padding:20px;height:280px}
-@media(max-width:768px){.charts-grid{grid-template-columns:1fr}.chart-card{height:220px}}
+@media(max-width:768px){.charts-grid{grid-template-columns:1fr}.chart-card{height:220px}}*/
+
+/* Charts */
+.charts-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:16px
+}
+
+.chart-card{
+  padding:20px;
+  height:280px;
+  min-width:0;
+}
+
+.chart-container{
+  position:relative;
+  height:calc(100% - 24px);
+  width:100%;
+}
+
+.chart-scroll{
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+  touch-action:pan-x;
+}
+
+.chart-scroll-inner{
+  position:relative;
+  height:100%;
+  min-width:100%;
+}
+
+@media(max-width:768px){
+  .charts-grid{
+    grid-template-columns:1fr
+  }
+
+  .chart-card{
+    height:240px
+  }
+}
 
 /* Status Toggle Button */
 .status-toggle{cursor:pointer;border:none;font-family:var(--font-body);transition:var(--transition)}
