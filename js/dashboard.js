@@ -104,19 +104,29 @@ $(function () {
           return;
         }
 
-        const top = Math.min(element.y, element.base);
-        const bottom = Math.max(element.y, element.base);
-        const height = bottom - top;
+const top = Math.min(element.y, element.base);
+const bottom = Math.max(element.y, element.base);
+const height = bottom - top;
 
-        if (height >= 20) {
-          ctx.fillStyle = '#ffffff';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(label, element.x, (top + bottom) / 2);
-        } else {
-          ctx.fillStyle = textColor;
-          ctx.textBaseline = 'bottom';
-          ctx.fillText(label, element.x, top - 4);
-        }
+// Electricity & Gas: always show value above the bar
+if (
+  chart.canvas.id === 'chart-elec' ||
+  chart.canvas.id === 'chart-gas'
+) {
+  ctx.fillStyle = textColor;
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(label, element.x, top - 6);
+}
+else if (height >= 20) {
+  // Stacked bar: keep value inside the bar
+  ctx.fillStyle = '#ffffff';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, element.x, (top + bottom) / 2);
+} else {
+  ctx.fillStyle = textColor;
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(label, element.x, top - 4);
+}
       });
     });
 
@@ -131,10 +141,17 @@ Chart.register(valueLabelsPlugin);
     const bills = getFilteredBills();
     const data = aggregateByMonth(bills);
     const labels = data.map(d => Utils.formatMonth(d.month));
-    const chartWidth = Math.max(labels.length * 90, 0);
+const visibleMonths = 3;
 
-document.querySelectorAll('.chart-scroll-inner').forEach(el => {
-  el.style.width = `${chartWidth}px`;
+document.querySelectorAll('.chart-scroll').forEach(scroll => {
+  const width = scroll.clientWidth;
+  const chartWidth = Math.max(
+    width,
+    (labels.length / visibleMonths) * width
+  );
+
+  const inner = scroll.querySelector('.chart-scroll-inner');
+  if (inner) inner.style.width = `${chartWidth}px`;
 });
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
