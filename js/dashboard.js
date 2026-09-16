@@ -393,20 +393,62 @@ const commonOpts = {
       y += 10;
 
       // ── Chart images (captured from live canvas elements) ──
+      // const chartIds = ['chart-revenue', 'chart-rent', 'chart-elec', 'chart-gas'];
+      // const chartW = (W - margin * 2 - 10) / 2;  // two per row
+      // const chartH = chartW * 0.55;
+      // let cx = margin;
+      // for (let i = 0; i < chartIds.length; i++) {
+      //   const canvas = document.getElementById(chartIds[i]);
+      //   if (canvas) {
+      //     if (y + chartH > doc.internal.pageSize.getHeight() - margin) { doc.addPage(); y = margin; }
+      //     const imgData = canvas.toDataURL('image/png');
+      //     doc.addImage(imgData, 'PNG', cx, y, chartW, chartH);
+      //     if (i % 2 === 0) { cx = margin + chartW + 10; }
+      //     else { cx = margin; y += chartH + 10; }
+      //   }
+      // }
+
       const chartIds = ['chart-revenue', 'chart-rent', 'chart-elec', 'chart-gas'];
-      const chartW = (W - margin * 2 - 10) / 2;  // two per row
-      const chartH = chartW * 0.55;
-      let cx = margin;
-      for (let i = 0; i < chartIds.length; i++) {
-        const canvas = document.getElementById(chartIds[i]);
-        if (canvas) {
-          if (y + chartH > doc.internal.pageSize.getHeight() - margin) { doc.addPage(); y = margin; }
-          const imgData = canvas.toDataURL('image/png');
-          doc.addImage(imgData, 'PNG', cx, y, chartW, chartH);
-          if (i % 2 === 0) { cx = margin + chartW + 10; }
-          else { cx = margin; y += chartH + 10; }
-        }
-      }
+const chartW = (W - margin * 2 - 10) / 2;
+const chartH = chartW * 0.55;
+let cx = margin;
+
+for (let i = 0; i < chartIds.length; i++) {
+  const canvas = document.getElementById(chartIds[i]);
+
+  if (canvas) {
+    if (y + chartH > doc.internal.pageSize.getHeight() - margin) {
+      doc.addPage();
+      y = margin;
+    }
+
+    const chart = Chart.getChart(canvas);
+
+    // Temporarily show native legend + Y-axis for PDF
+    if (chart) {
+      chart.options.plugins.legend.display = true;
+      chart.options.scales.y.ticks.display = true;
+      chart.update('none');
+    }
+
+    const imgData = canvas.toDataURL('image/png');
+    doc.addImage(imgData, 'PNG', cx, y, chartW, chartH);
+
+    // Restore screen version
+    if (chart) {
+      chart.options.plugins.legend.display = false;
+      chart.options.scales.y.ticks.display = false;
+      chart.update('none');
+    }
+
+    if (i % 2 === 0) {
+      cx = margin + chartW + 10;
+    } else {
+      cx = margin;
+      y += chartH + 10;
+    }
+  }
+}
       if (cx !== margin) y += chartH + 10; // flush last row if odd count
       y += 8;
 
