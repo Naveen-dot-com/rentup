@@ -206,7 +206,11 @@ document.querySelectorAll('.chart-scroll').forEach(scroll => {
 const commonOpts = {
   responsive: true,
   maintainAspectRatio: false,
-
+layout: {
+  padding: {
+    top: 10
+  }
+},
   plugins: {
     legend: {
       display: false
