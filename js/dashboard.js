@@ -146,9 +146,42 @@ else if (height >= 20) {
 };
 
 Chart.register(valueLabelsPlugin);
-  
 
-  function renderCharts() {
+/* Keep legend and Y-axis outside the horizontally scrolling canvas */
+function updateStaticChartUI(key, chart) {
+  const legend = document.getElementById(`legend-${key}`);
+  const axis = document.getElementById(`yaxis-${key}`);
+
+  if (legend) {
+    legend.innerHTML = chart.data.datasets.map(ds => {
+      const color = Array.isArray(ds.backgroundColor)
+        ? ds.backgroundColor[0]
+        : (ds.borderColor || ds.backgroundColor || '#888');
+
+      return `
+        <span>
+          <i style="background:${color}"></i>
+          ${ds.label || ''}
+        </span>
+      `;
+    }).join('');
+  }
+
+  if (axis && chart.scales.y) {
+    axis.innerHTML = chart.scales.y.ticks.map(tick => {
+      const y = chart.scales.y.getPixelForValue(tick.value);
+
+      return `
+        <span style="top:${y}px">
+          ${tick.label}
+        </span>
+      `;
+    }).join('');
+  }
+}
+
+
+function renderCharts() {
     const bills = getFilteredBills();
     const data = aggregateByMonth(bills);
     const labels = data.map(d => Utils.formatMonth(d.month));
@@ -169,8 +202,41 @@ document.querySelectorAll('.chart-scroll').forEach(scroll => {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
     const textColor = isDark ? '#9c9cb5' : '#555577';
-    const commonOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: textColor, font: { family: 'Inter', size: 11 } } } }, scales: { x: { grid: { display: false }, ticks: { color: textColor, font: { size: 10 } } }, y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 10 } } } } };
+  //  const commonOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: textColor, font: { family: 'Inter', size: 11 } } } }, scales: { x: { grid: { display: false }, ticks: { color: textColor, font: { size: 10 } } }, y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 10 } } } } };
+const commonOpts = {
+  responsive: true,
+  maintainAspectRatio: false,
 
+  plugins: {
+    legend: {
+      display: false
+    }
+  },
+
+  scales: {
+    x: {
+      grid: {
+        display: false
+      },
+      ticks: {
+        color: textColor,
+        font: {
+          size: 10
+        }
+      }
+    },
+
+    y: {
+      grid: {
+        color: gridColor
+      },
+      ticks: {
+        display: false
+      }
+    }
+  }
+};
+  
     if (charts.revenue) charts.revenue.destroy();
     charts.revenue = new Chart(document.getElementById('chart-revenue'), {
       type: 'bar', data: { labels, datasets: [
@@ -179,6 +245,7 @@ document.querySelectorAll('.chart-scroll').forEach(scroll => {
         { label: t('chart_gas'), data: data.map(d => d.gas), backgroundColor: '#fdcb6e', borderRadius: 4 },
       ] }, options: { ...commonOpts, plugins: { ...commonOpts.plugins, tooltip: { mode: 'index', intersect: false } }, scales: { ...commonOpts.scales, x: { ...commonOpts.scales.x, stacked: true }, y: { ...commonOpts.scales.y, stacked: true } } }
     });
+  updateStaticChartUI('revenue', charts.revenue);
 
     if (charts.rent) charts.rent.destroy();
     const ctxRent = document.getElementById('chart-rent').getContext('2d');
@@ -187,6 +254,7 @@ document.querySelectorAll('.chart-scroll').forEach(scroll => {
     charts.rent = new Chart(document.getElementById('chart-rent'), {
       type: 'line', data: { labels, datasets: [{ label: t('chart_rent'), data: data.map(d => d.rent), borderColor: '#6c5ce7', backgroundColor: gradRent, borderWidth: 3, tension: 0.4, fill: true, pointRadius: 4, pointBackgroundColor: '#fff', pointBorderColor: '#6c5ce7', pointBorderWidth: 2 }] }, options: commonOpts
     });
+  updateStaticChartUI('rent', charts.rent);
 
     if (charts.elec) charts.elec.destroy();
     charts.elec = new Chart(document.getElementById('chart-elec'), {
@@ -205,6 +273,7 @@ document.querySelectorAll('.chart-scroll').forEach(scroll => {
   }
 }
     });
+  updateStaticChartUI('elec', charts.elec);
 
     if (charts.gas) charts.gas.destroy();
     charts.gas = new Chart(document.getElementById('chart-gas'), {
@@ -223,6 +292,7 @@ document.querySelectorAll('.chart-scroll').forEach(scroll => {
   }
 }
     });
+  updateStaticChartUI('gas', charts.gas);
   
   requestAnimationFrame(() => {
   document.querySelectorAll('.chart-scroll').forEach(scroll => {
