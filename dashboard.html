@@ -56,45 +56,89 @@
         <div class="chart-card glass-static"><h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)" data-i18n="chart_electricity">Electricity</h3><div class="chart-container" style="position:relative;height:calc(100% - 24px);width:100%"><canvas id="chart-elec"></canvas></div></div>
         <div class="chart-card glass-static"><h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)" data-i18n="chart_gas">Gas Amount</h3><div class="chart-container" style="position:relative;height:calc(100% - 24px);width:100%"><canvas id="chart-gas"></canvas></div></div>
       </div> -->
+
       <div class="charts-grid">
+
+  <!-- Monthly Breakdown -->
   <div class="chart-card glass-static">
-    <h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)" data-i18n="dash_revenue_chart">Monthly Breakdown</h3>
-    <div class="chart-container chart-scroll">
-      <div class="chart-scroll-inner">
-        <canvas id="chart-revenue"></canvas>
+    <h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)"
+        data-i18n="dash_revenue_chart">Monthly Breakdown</h3>
+
+    <div class="chart-legend" id="legend-revenue"></div>
+
+    <div class="chart-layout">
+      <div class="chart-y-axis" id="yaxis-revenue"></div>
+
+      <div class="chart-container chart-scroll">
+        <div class="chart-scroll-inner">
+          <canvas id="chart-revenue"></canvas>
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- Rent -->
   <div class="chart-card glass-static">
-    <h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)" data-i18n="chart_rent">Rent Collection</h3>
-    <div class="chart-container chart-scroll">
-      <div class="chart-scroll-inner">
-        <canvas id="chart-rent"></canvas>
+    <h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)"
+        data-i18n="chart_rent">Rent Collection</h3>
+
+    <div class="chart-legend" id="legend-rent"></div>
+
+    <div class="chart-layout">
+      <div class="chart-y-axis" id="yaxis-rent"></div>
+
+      <div class="chart-container chart-scroll">
+        <div class="chart-scroll-inner">
+          <canvas id="chart-rent"></canvas>
+        </div>
       </div>
     </div>
   </div>
+
 </div>
 
 <div class="charts-grid" style="margin-top:16px">
+
+  <!-- Electricity -->
   <div class="chart-card glass-static">
-    <h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)" data-i18n="chart_electricity">Electricity</h3>
-    <div class="chart-container chart-scroll">
-      <div class="chart-scroll-inner">
-        <canvas id="chart-elec"></canvas>
+    <h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)"
+        data-i18n="chart_electricity">Electricity</h3>
+
+    <div class="chart-legend" id="legend-elec"></div>
+
+    <div class="chart-layout">
+      <div class="chart-y-axis" id="yaxis-elec"></div>
+
+      <div class="chart-container chart-scroll">
+        <div class="chart-scroll-inner">
+          <canvas id="chart-elec"></canvas>
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- Gas -->
   <div class="chart-card glass-static">
-    <h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)" data-i18n="chart_gas">Gas Amount</h3>
-    <div class="chart-container chart-scroll">
-      <div class="chart-scroll-inner">
-        <canvas id="chart-gas"></canvas>
+    <h3 style="margin:0 0 8px;font-size:0.85rem;color:var(--text-muted)"
+        data-i18n="chart_gas">Gas Amount</h3>
+
+    <div class="chart-legend" id="legend-gas"></div>
+
+    <div class="chart-layout">
+      <div class="chart-y-axis" id="yaxis-gas"></div>
+
+      <div class="chart-container chart-scroll">
+        <div class="chart-scroll-inner">
+          <canvas id="chart-gas"></canvas>
+        </div>
       </div>
     </div>
   </div>
+
 </div>
+      
+      
+      
       <!-- Recent Activity -->
       <div class="section-divider" style="margin-top:28px;display:flex;align-items:center;justify-content:space-between">
         <h2><i data-lucide="clock"></i> <span data-i18n="dash_recent_bills">Recent Activity</span></h2>
